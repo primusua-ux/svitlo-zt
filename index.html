@@ -61,7 +61,14 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
 .about h4{margin:16px 0 4px;font-size:15px}
 .about ol{margin:6px 0;padding-left:20px;color:var(--muted);font-size:14px}
 .about ol li{margin:4px 0}
-.hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(30px + var(--safe-b));z-index:450;
+.ps{position:fixed;left:10px;bottom:calc(8px + var(--safe-b));z-index:440;display:flex;align-items:center;gap:6px;
+  background:rgba(20,24,31,.86);border-radius:999px;padding:4px 10px 4px 5px;font:600 12px/1 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color:var(--text);letter-spacing:.2px;box-shadow:0 1px 6px rgba(0,0,0,.3);cursor:pointer;border:0}
+.ps svg{width:18px;height:18px;flex:none}
+.ps i{font-style:normal;color:var(--accent)}
+.psfoot{display:flex;align-items:center;gap:8px;margin:18px 0 6px;color:var(--muted);font-size:13px}
+.psfoot .ps{position:static;box-shadow:none;background:var(--panel)}
+.hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(44px + var(--safe-b));z-index:450;
   background:rgba(20,24,31,.88);color:var(--text);padding:9px 14px;border-radius:999px;font-size:14px;white-space:nowrap;
   pointer-events:none;transition:opacity .3s}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:600;background:var(--panel);border-radius:18px 18px 0 0;
@@ -106,7 +113,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
 .list button:last-child{border-bottom:0}
 .list button:active{background:var(--panel2)}
 .about p{color:var(--muted);font-size:14px;margin:8px 0}
-.about pre{white-space:pre-wrap;font:14px/1.4 inherit;background:var(--panel);border-radius:12px;padding:12px;margin:8px 0}
+.about pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.4;background:var(--panel);border-radius:12px;padding:12px;margin:8px 0}
 a{color:var(--accent)}
 .pin{width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.6);background:#667}
 .pin.on{background:var(--on)} .pin.off{background:var(--off)} .pin.acc{background:var(--acc)} .pin.plan{background:var(--plan)}
@@ -131,6 +138,7 @@ a{color:var(--accent)}
   <button class="iconbtn acc" id="btnAcc" aria-label="Де аварії"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17v.5"/></svg><span class="badge" id="accBadge"></span></button>
   <button class="iconbtn" id="btnHelp" aria-label="Допомога"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.5"/></svg></button>
 </div>
+<button class="ps" id="psLogo" aria-label="PrimusSoft"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="#f6c343"/><path d="M8 18V6h5.2a3.6 3.6 0 0 1 0 7.2H8" fill="none" stroke="#14181f" stroke-width="2.4" stroke-linejoin="round"/></svg><span>Primus<i>Soft</i></span></button>
 <div class="gav" id="gav"></div>
 <div class="hint" id="hint">Торкніться будинку чи вулиці на карті</div>
 
@@ -192,6 +200,7 @@ a{color:var(--accent)}
   <p>Графік і черги: <a href="https://www.ztoe.com.ua/unhooking-search.php" target="_blank" rel="noopener">АТ «Житомиробленерго»</a>. Аварії, ремонти і фактичний стан черг: сервіс обленерго <a href="https://ztoe-poweron.inneti.net/" target="_blank" rel="noopener">«Чому немає світла?»</a>. Дані оновлюються кожні 15 хвилин, а після перемикання черг можуть запізнюватися до пів години.</p>
   <p>Графік діє, коли «Укренерго» застосовує обмеження. Під час обласних аварійних відключень графік не застосовується, про це попередить червоний банер угорі.</p>
   <p>Карта і координати будинків: © учасники <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Сторінка неофіційна, можливі неточності у визначенні адреси.</p>
+  <div class="psfoot"><span class="ps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="#f6c343"/><path d="M8 18V6h5.2a3.6 3.6 0 0 1 0 7.2H8" fill="none" stroke="#14181f" stroke-width="2.4" stroke-linejoin="round"/></svg><span>Primus<i>Soft</i></span></span><span>Розробка: PrimusSoft</span></div>
 </div>
 
 <script src="vendor/leaflet/leaflet.js"></script>
@@ -453,6 +462,7 @@ document.querySelectorAll("[data-close]").forEach(function(b){b.onclick=function
 $("btnSearch").onclick=function(){openPanel("search")};
 $("brand").onclick=function(){openPanel("about")};
 $("btnHelp").onclick=function(){openPanel("about")};
+$("psLogo").onclick=function(){openPanel("about")};
 $("btnAcc").onclick=function(){openPanel("accP");renderAcc()};
 
 /* ---------- перелік аварій ---------- */
