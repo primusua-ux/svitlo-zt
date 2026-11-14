@@ -294,7 +294,7 @@ function loadCell(k){
   if(cellCache[k]) return cellCache[k];
   return cellCache[k]=fetch("data/pts/"+k+".json").then(function(r){return r.json()}).then(function(d){
     var la0=d.o[0], lo0=d.o[1];
-    d.pts=d.p.map(function(a){var n=d.n[d.s[a[2]][0]];return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, rem:n[0], sp:n[1], st:d.s[a[2]][1], h:a[3], codes:a[4].split("|"), poly:a[5]?ring((la0+a[0])/1e5,(lo0+a[1])/1e5,a[5]):null}});
+    d.pts=d.p.map(function(a){var n=d.n[d.s[a[2]][0]];return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, rem:n[0], sp:n[1], st:d.s[a[2]][1], h:a[3], codes:orderCodes(a[4].split("|")), poly:a[5]?ring((la0+a[0])/1e5,(lo0+a[1])/1e5,a[5]):null}});
     return d;
   }).catch(function(){cellCache[k]=null;return null});
 }
@@ -386,6 +386,8 @@ function goToAddress(r){
     map.panBy([0,off],{animate:false});
   });
 }
+// спершу житлові (побутові) підчерги, потім нежитлові (юридичні): саме за першою фарбується будинок
+function orderCodes(c){return c.slice().sort(function(a,b){return (/ю$/.test(a)?1:0)-(/ю$/.test(b)?1:0)||a.localeCompare(b)})}
 function dedupe(codes){var plain={};codes.forEach(function(c){if(!/ю$/.test(c))plain[c]=1});return codes.filter(function(c){return !(/ю$/.test(c)&&plain[c.slice(0,-1)])})}
 function loadRem(k){
   var idx=remIndex?Promise.resolve(remIndex):fetch("data/index.json").then(function(r){return r.json()}).then(function(d){return remIndex=d});
@@ -408,7 +410,7 @@ var ICON_ON='<svg viewBox="0 0 24 24"><path d="M9 21h6v-1H9zm3-19a7 7 0 0 0-4 12
 var ICON_OFF='<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
 function entryHtml(code,multi){
   var ci=codeInfo(code), row=ci.row, fresh=schedFresh();
-  var head='<span class="tag">Підчерга '+esc(ci.q)+'</span>'+(multi||ci.legal?'<span class="tag">'+(ci.legal?"юридичні споживачі":"побутові споживачі")+'</span>':"");
+  var head='<span class="tag">Підчерга '+esc(ci.q)+'</span>'+(multi||ci.legal?'<span class="tag">'+(ci.legal?"нежитлові приміщення":"житлові (побутові)")+'</span>':"");
   if(!row) return '<div class="entry"><div class="status unk"><div class="dot">'+ICON_OFF+'</div><div><h2>Графік недоступний</h2><p>'+head+'</p></div></div></div>';
   var now=kyivNow(), slot=Math.min(47,Math.floor(now.min/30)), cur=row.charAt(slot), j=slot;
   while(j<48&&row.charAt(j)===cur) j++;
@@ -430,7 +432,7 @@ function entryHtml(code,multi){
     '<div class="ivs">'+(ivs?"Відключення: "+ivs:"Відключень за графіком немає")+'</div></div>';
 }
 function showResult(r){
-  lastResult=r;
+  lastResult=r; r.codes=orderCodes(r.codes);
   var first=stateNow(codeInfo(r.codes[0]).row)||"", evs=eventsFor(r.rem,r.sp,r.st,r.h), ae=activeEvent(r.rem,r.sp,r.st,r.h), now=Date.now()/1000;
   var lv0=liveState(codeInfo(r.codes[0]).q); if(lv0&&first) first=lv0;
   if(r.lat!=null) setPin(r.lat,r.lon,ae?ae.kind:first);
@@ -441,6 +443,8 @@ function showResult(r){
     if(e.kind==="acc") html+='<div class="alert"><b>Аварійне відключення'+(act?"":" (заплановане)")+'</b>'+(e.note?"Причина: "+esc(e.note)+". ":"")+"Початок: "+fmtT(e.from)+". "+(e.to?(e.to<now?"Очікуваний час відновлення ("+fmtT(e.to)+") уже минув, роботи тривають.":"Орієнтовне відновлення: "+fmtT(e.to)+"."):"")+'</div>';
     else html+='<div class="alert plan"><b>Планові роботи'+(act?" тривають":"")+'</b>'+fmtT(e.from)+" – "+fmtT(e.to)+(e.note?". "+esc(e.note):"")+'</div>';
   });
+  var hasRes=r.codes.some(function(c){return !/ю$/.test(c)}), hasLeg=r.codes.some(function(c){return /ю$/.test(c)});
+  if(hasRes&&hasLeg) html+='<div class="note" style="color:var(--muted)">У будинку різні підчерги для квартир і для нежитлових приміщень (магазини, офіси, ЖЕК). Для мешканців діє перша.</div>';
   html+=r.codes.map(function(c){return entryHtml(c,r.codes.length>1)}).join("");
   if(OUT&&OUT.gav&&OUT.gav.active&&outFresh()) html+='<div class="alert fact"><b>Діють аварійні відключення по області</b>Графік нижче зараз може не застосовуватися.</div>';
   html+='<div class="foot">Графік діє, коли «Укренерго» застосовує обмеження. '+(outFresh()?"Аварії та ремонти: дані обленерго на "+fmtT(OUT.updated)+". ":"Оперативні дані про аварії зараз недоступні. ")+'<a href="#" id="toAbout">Докладніше</a></div>';
