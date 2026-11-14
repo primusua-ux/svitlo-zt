@@ -188,9 +188,23 @@ for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
     la = float(la); lo = float(lo); stats["osm"] += 1
     if len(cols) > 7 and cols[7]: polyof[(la, lo, hn.strip())] = cols[7]
     st = st or pl
-    if not st or not hn: stats["no_street"] += 1; continue
-    sk = street_key(st); hk = house_key(hn); hit = None
+    near = cols[8].split("|") if len(cols) > 8 and cols[8] else []
+    if not hn or (not st and not near): stats["no_street"] += 1; continue
+    hk = house_key(hn); hit = None
     cands = candidates(la, lo, city)
+    if not st:
+        # адреса без назви вулиці: беремо найближчі вулиці, але лише якщо номер будинку є рівно на одній з них
+        hits = []
+        for nm in near:
+            sk1 = street_key(nm)
+            for rem, sp in cands:
+                m = zt[(rem, sp)]; k = find_street(m, sk1, la, lo)
+                if k is not None and hk in m[k]: hits.append((rem, sp, k, m[k][hk])); break
+        if len({h[:3] for h in hits}) == 1:
+            take_house(la, lo, hits[0][0], hits[0][1], hits[0][2], hk, hn, hits[0][3]); stats["inferred_street"] += 1
+        else: stats["no_street"] += 1
+        continue
+    sk = street_key(st)
     for rem, sp in cands:
         m = zt[(rem, sp)]; k = find_street(m, sk, la, lo)
         if k is not None and hk in m[k]: hit = (rem, sp, k, m[k][hk]); break
