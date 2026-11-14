@@ -41,12 +41,21 @@ def parse(t):
     }
 
 if __name__ == "__main__":
-    data = parse(fetch())
+    import os, subprocess
     try:
-        old = json.load(open(OUT, encoding="utf-8"))
-        if all(old.get(k) == data[k] for k in ("date", "source_updated", "notice", "grid")):
-            print("без змін"); sys.exit(0)
-    except (OSError, ValueError):
-        pass
-    json.dump(data, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    print("оновлено:", data["date"], data["source_updated"])
+        data = parse(fetch()); changed = True
+        try:
+            old = json.load(open(OUT, encoding="utf-8"))
+            changed = not all(old.get(k) == data[k] for k in ("date", "source_updated", "notice", "grid"))
+        except (OSError, ValueError):
+            pass
+        if changed:
+            json.dump(data, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+            print("графік оновлено:", data["date"], data["source_updated"])
+        else:
+            print("графік без змін")
+    except Exception as e:
+        print("графік: помилка", e)
+    # діючі відключення + публікація у гілку live (лише в GitHub Actions)
+    if os.environ.get("GITHUB_ACTIONS"):
+        subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "publish_live.py")])
