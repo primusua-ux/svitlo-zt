@@ -2,7 +2,7 @@
 """Одноразово забирає з OpenStreetMap (Overpass API) адресні точки та населені пункти
 Житомирської області і зберігає компактні TSV: data/osm/addr.tsv.gz, data/osm/places.tsv.gz.
 Дані © учасники OpenStreetMap, ліцензія ODbL."""
-import gzip, json, sys, time, urllib.parse, urllib.request
+import gzip, json, os, sys, time, urllib.parse, urllib.request
 
 MIRRORS = ["https://overpass-api.de/api/interpreter",
            "https://overpass.private.coffee/api/interpreter",
@@ -49,6 +49,7 @@ def clean(s):
     return (s or "").replace("\t", " ").replace("\n", " ").strip()
 
 def main(out):
+    os.makedirs(out, exist_ok=True)
     n = 0
     with gzip.open(f"{out}/addr.tsv.gz", "wt", encoding="utf-8") as f:
         for e in addr_elements():
