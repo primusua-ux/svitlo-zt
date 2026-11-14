@@ -8,29 +8,50 @@ MIRRORS = ["https://overpass-api.de/api/interpreter",
            "https://overpass.private.coffee/api/interpreter",
            "https://overpass.kumi.systems/api/interpreter"]
 AREA = 'area["ISO3166-2"="UA-18"]->.a;'
-Q_ADDR = f'[out:json][timeout:900][maxsize:2000000000];{AREA}nwr["addr:housenumber"](area.a);out tags center qt;'
-Q_PLACE = f'[out:json][timeout:300];{AREA}node["place"~"^(city|town|village|hamlet|suburb|neighbourhood|allotments)$"](area.a);out tags qt;'
+Q_PLACE = f'[out:json][timeout:170];{AREA}node["place"~"^(city|town|village|hamlet|suburb|neighbourhood|allotments)$"](area.a);out tags qt;'
+
+def q_addr(s, w, n, e):
+    return f'[out:json][timeout:170];{AREA}nwr["addr:housenumber"](area.a)({s},{w},{n},{e});out tags center qt;'
 
 def run(q):
     last = None
-    for attempt in range(3):
+    for attempt in range(4):
         for url in MIRRORS:
             try:
                 req = urllib.request.Request(url, data=urllib.parse.urlencode({"data": q}).encode(),
                                              headers={"User-Agent": "svitlo-zt (github.com/primusua-ux/svitlo-zt)"})
-                with urllib.request.urlopen(req, timeout=1000) as r:
-                    return json.load(r)["elements"]
+                with urllib.request.urlopen(req, timeout=200) as r:
+                    d = json.load(r)
+                if "remark" in d and "error" in d["remark"].lower():
+                    raise RuntimeError(d["remark"])
+                return d["elements"]
             except Exception as e:
-                last = e; print("помилка", url, e, file=sys.stderr); time.sleep(20)
+                last = e; print("помилка", url, e, flush=True); time.sleep(15)
     raise last
+
+def addr_elements():
+    """Область частинами по 0.5 градуса, щоб кожен запит був коротким."""
+    seen = set()
+    lat = 49.5
+    while lat < 51.8:
+        lon = 27.0
+        while lon < 30.0:
+            els = run(q_addr(lat, lon, lat + 0.5, lon + 0.5))
+            print(f"частина {lat:.1f},{lon:.1f}: {len(els)}", flush=True)
+            for e in els:
+                k = (e["type"], e["id"])
+                if k not in seen:
+                    seen.add(k); yield e
+            time.sleep(2); lon += 0.5
+        lat += 0.5
 
 def clean(s):
     return (s or "").replace("\t", " ").replace("\n", " ").strip()
 
 def main(out):
-    els = run(Q_ADDR); n = 0
+    n = 0
     with gzip.open(f"{out}/addr.tsv.gz", "wt", encoding="utf-8") as f:
-        for e in els:
+        for e in addr_elements():
             lat = e.get("lat") or e.get("center", {}).get("lat"); lon = e.get("lon") or e.get("center", {}).get("lon")
             t = e.get("tags", {})
             if lat is None: continue
