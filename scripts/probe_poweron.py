@@ -1,34 +1,29 @@
 #!/usr/bin/env python3
-"""Розвідка публічного API «Чому немає світла?» (PowerOn) Житомиробленерго. Тимчасовий скрипт."""
-import json, os, urllib.request
+"""Розвідка API PowerOn: зведення типів записів. Тимчасовий скрипт."""
+import json, os, re, urllib.request
+from collections import Counter, defaultdict
 B = "https://api-ztoe-poweron.inneti.net/api"
+def get(path):
+    req = urllib.request.Request(B + path, headers={"Accept": "application/ld+json", "User-Agent": "Mozilla/5.0 (svitlo-zt research)"})
+    with urllib.request.urlopen(req, timeout=90) as r: return json.load(r)
+rows = []; page = 1; per = None
+while True:
+    d = get(f"/pw_accidents?itemsPerPage=1000&page={page}")
+    m = d["hydra:member"]; per = per or len(m); rows += m
+    if not m or len(rows) >= d["hydra:totalItems"] or page > 400: break
+    page += 1
+tally = Counter(); ex = defaultdict(list); keys = Counter()
+for r in rows:
+    k = r.get("koment") or ""
+    kk = "черга" if re.fullmatch(r"\d\.\d", k.strip()) else ("порожньо" if not k.strip() else "текст")
+    key = f"typeOff={r.get('typeOff')} subReason={r.get('switchSubReason')} koment={kk}"
+    tally[key] += 1
+    for f in r: keys[f] += 1
+    if len(ex[key]) < 4:
+        ex[key].append({"city": (r.get("city") or {}).get("name"), "street": (r.get("street") or {}).get("name"), "b": (r.get("buildingNames") or "")[:80],
+                        "from": r.get("dateEvent"), "to": r.get("datePlanIn"), "koment": k[:120], "otg": (r.get("otg") or {}).get("name")})
+out = {"total": len(rows), "per_page_returned": per, "pages": page, "fields": keys, "tally": tally.most_common(), "examples": ex,
+       "zhytomyr_rows": sum(1 for r in rows if (r.get("city") or {}).get("name") == "Житомир"),
+       "options": [(o.get("optionKey"), o.get("date"), o.get("value")) for o in get("/options")["hydra:member"]]}
 os.makedirs("data/probe", exist_ok=True)
-def get(path, accept="application/ld+json"):
-    req = urllib.request.Request(B + path, headers={"Accept": accept, "User-Agent": "Mozilla/5.0 (svitlo-zt research)",
-                                                     "Origin": "https://ztoe-poweron.inneti.net", "Referer": "https://ztoe-poweron.inneti.net/"})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return r.status, dict(r.headers), r.read()
-    except Exception as e:
-        body = getattr(e, "read", lambda: b"")()
-        return getattr(e, "code", 0), {}, (str(e) + "\n").encode() + body[:2000]
-out = {}
-for name, path in [("entry", ""), ("docs", "/docs.jsonld"), ("accidents", "/pw_accidents?page=1&itemsPerPage=30"),
-                   ("accidents_json", "/pw_accidents?page=1"), ("otgs", "/pw_otgs?page=1&itemsPerPage=30"),
-                   ("cities", "/pw_cities?page=1&itemsPerPage=10"), ("streets", "/pw_streets?page=1&itemsPerPage=10"),
-                   ("address_queues", "/pw_address_queues?page=1&itemsPerPage=5"), ("options", "/options"), ("gpv", "/a_gpv_g")]:
-    st, hd, body = get(path)
-    out[name] = {"status": st, "len": len(body), "headers": {k: v for k, v in hd.items() if k.lower() in ("content-type", "access-control-allow-origin", "cache-control")}}
-    if name == "docs":
-        try:
-            d = json.loads(body)
-            res = []
-            for c in d.get("hydra:supportedClass", []):
-                res.append({"title": c.get("hydra:title") or c.get("@id"),
-                            "props": [p.get("hydra:title") for p in c.get("hydra:supportedProperty", [])]})
-            body = json.dumps(res, ensure_ascii=False).encode()
-        except Exception as e:
-            body = body[:3000]
-    open(f"data/probe/{name}.txt", "wb").write(body[:60000])
-json.dump(out, open("data/probe/summary.json", "w"), ensure_ascii=False, indent=1)
-print(json.dumps(out, ensure_ascii=False, indent=1))
+json.dump(out, open("data/probe/tally.json", "w"), ensure_ascii=False, indent=1)
