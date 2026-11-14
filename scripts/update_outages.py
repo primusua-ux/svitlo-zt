@@ -82,7 +82,7 @@ for r in rows:
     if not hit: stats[kind + "_unmatched"] += 1; continue
     sp, st, hs = hit
     if kind == "gpv":
-        if t0 <= now:
+        if t0 <= now and not (t1 and t1 < now - 600):      # лише ті, що тривають зараз
             for h in houses:
                 for q in {c.rstrip("ю") for c in hs.get(h, ())}: qoff[q].add((rem, sp, st, h))
         continue

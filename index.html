@@ -10,7 +10,7 @@
 <style>
 :root{
   --bg:#14181f; --panel:#1c222b; --panel2:#252d38; --line:#333d4a;
-  --text:#eef2f6; --muted:#9aa7b5; --on:#35c26b; --off:#f0524f; --accent:#f6c343;
+  --text:#eef2f6; --muted:#9aa7b5; --on:#35c26b; --off:#f0524f; --accent:#f6c343; --acc:#f59e0b; --plan:#7c8aff;
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -78,7 +78,14 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
 .about pre{white-space:pre-wrap;font:14px/1.4 inherit;background:var(--panel);border-radius:12px;padding:12px;margin:8px 0}
 a{color:var(--accent)}
 .pin{width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.6);background:#667}
-.pin.on{background:var(--on)} .pin.off{background:var(--off)}
+.pin.on{background:var(--on)} .pin.off{background:var(--off)} .pin.acc{background:var(--acc)} .pin.plan{background:var(--plan)}
+.alert{margin-top:10px;border-radius:12px;padding:10px 12px;font-size:14px;background:rgba(245,158,11,.16);border:1px solid var(--acc)}
+.alert.plan{background:rgba(124,138,255,.14);border-color:var(--plan)}
+.alert b{display:block;font-size:15px;margin-bottom:2px}
+.alert.fact{background:rgba(240,82,79,.14);border-color:var(--off)}
+.alert.facton{background:rgba(53,194,107,.14);border-color:var(--on)}
+.gav{position:fixed;left:10px;right:10px;top:calc(66px + var(--safe-t));z-index:490;background:#7a1f1d;color:#fff;border-radius:12px;padding:8px 12px;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.35);display:none}
+.gav a{color:#ffd9a8}
 </style>
 </head>
 <body>
@@ -89,6 +96,7 @@ a{color:var(--accent)}
   <button class="iconbtn" id="btnSearch" aria-label="Пошук за адресою"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
 </div>
 <button class="iconbtn" id="locate" aria-label="Моє місцезнаходження"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></button>
+<div class="gav" id="gav"></div>
 <div class="hint" id="hint">Торкніться будинку чи вулиці на карті</div>
 
 <div class="sheet" id="sheet" role="dialog" aria-live="polite">
@@ -115,7 +123,7 @@ a{color:var(--accent)}
   <button class="close" data-close="about" aria-label="Закрити">×</button>
   <h3>Про графік</h3>
   <div id="aboutBody"></div>
-  <p>Зелений колір означає, що за графіком світло є. Червоний означає відключення, якщо «Укренерго» застосовує обмеження. Аварійні відключення та планові ремонти графік не враховує.</p>
+  <p>Зелений колір означає, що світло є. Червоний означає відключення за графіком. Помаранчевий означає аварійне відключення, синій означає планові роботи. Аварії, ремонти та фактичний стан черг беруться з сервісу обленерго «Чому немає світла?» і можуть запізнюватися на 15–20 хвилин.</p>
   <p>Джерело графіка й адрес: <a href="https://www.ztoe.com.ua/unhooking-search.php" target="_blank" rel="noopener">АТ «Житомиробленерго»</a>. Координати будинків і карта: © учасники <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Сторінка неофіційна, можливі неточності у визначенні адреси.</p>
 </div>
 
@@ -126,6 +134,7 @@ a{color:var(--accent)}
 var $=function(id){return document.getElementById(id)};
 var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
 var SCHED=null, CELLS=null, cellCache={}, remIndex=null, remCache={};
+var LIVE="https://raw.githubusercontent.com/primusua-ux/svitlo-zt/live/", OUT=null, OUTIDX={};
 var NEAR_M=45, STREET_M=75, FAR_M=150, PLACES=[];
 
 /* ---------- час у Києві ---------- */
@@ -139,7 +148,9 @@ function schedFresh(){return SCHED && SCHED.date===kyivNow().date}
 
 /* ---------- графік ---------- */
 function loadSchedule(){
-  return fetch("data/schedule.json?t="+Math.floor(Date.now()/60000),{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){
+  var t="?t="+Math.floor(Date.now()/60000);
+  return fetch(LIVE+"schedule.json"+t,{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.json()})
+    .catch(function(){return fetch("data/schedule.json"+t,{cache:"no-store"}).then(function(r){return r.json()})}).then(function(d){
     SCHED=d; var sub=$("sub"), d2=d.date.split("-").reverse().join(".");
     if(schedFresh()){sub.className="";sub.textContent="Графік на "+d2+(d.source_updated?" · оновлено "+d.source_updated.split(" ")[1]:"")}
     else{sub.className="warn";sub.textContent="Графік на сьогодні ще не опубліковано (є на "+d2+")"}
@@ -147,6 +158,43 @@ function loadSchedule(){
     redrawDots(); if(lastResult) showResult(lastResult);
   }).catch(function(){ $("sub").className="warn"; $("sub").textContent="Не вдалося завантажити графік" });
 }
+/* ---------- діючі відключення (аварії, ремонти, фактичний стан черг) ---------- */
+function hk(h){return String(h).toUpperCase().replace(/[\s]/g,"").replace(/^(\d+)-([А-ЯІЇЄҐA-Z])$/,"$1$2")}
+function loadOutages(){
+  return fetch(LIVE+"outages.json?t="+Math.floor(Date.now()/60000),{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){
+    OUT=d; OUTIDX={};
+    Object.keys(d.acc||{}).forEach(function(k){OUTIDX[k]=d.acc[k].map(function(e){var hs={};e[4].split(",").forEach(function(h){if(h)hs[h]=1});return {kind:e[0]?"plan":"acc",from:e[1],to:e[2],note:e[3],hs:hs,all:!e[4]||!!hs["0"]&&Object.keys(hs).length===1}})});
+    var g=$("gav"), gv=d.gav||{};
+    if(gv.active){g.style.display="block";g.innerHTML="Діють аварійні відключення за командою «Укренерго». Графік погодинних відключень зараз може не застосовуватися. "+(gv.url?'<a href="'+esc(gv.url)+'" target="_blank" rel="noopener">Повідомлення обленерго</a>':"")}
+    else g.style.display="none";
+    redrawDots(); if(lastResult) showResult(lastResult);
+  }).catch(function(){});
+}
+function outFresh(){return OUT&&Date.now()/1000-OUT.updated<45*60}
+// події для адреси: активні зараз і майбутні
+function eventsFor(rem,sp,st,h){
+  if(!outFresh()||!st) return [];
+  var a=OUTIDX[rem+"|"+sp+"|"+st]; if(!a) return [];
+  var now=Date.now()/1000, key=h?hk(h):null;
+  return a.filter(function(e){return (e.all||(key&&e.hs[key]))&&(e.kind==="acc"||e.to>now-3600)});
+}
+function activeEvent(rem,sp,st,h){
+  var now=Date.now()/1000, ev=eventsFor(rem,sp,st,h).filter(function(e){return e.from<=now&&(e.kind==="acc"||e.to>=now)});
+  return ev.filter(function(e){return e.kind==="acc"})[0]||ev[0]||null;
+}
+function fmtT(t){var p={};new Intl.DateTimeFormat("uk",{timeZone:"Europe/Kyiv",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(t*1000)).forEach(function(x){p[x.type]=x.value});
+  var today=kyivNow().date.slice(8,10)===p.day; return (today?"":p.day+"."+p.month+" ")+p.hour+":"+p.minute}
+// фактичний стан черги за оперативними даними: "off", "on" або null (немає певності)
+function liveState(q){
+  if(!outFresh()||!OUT.live||OUT.live[q]==null) return null;
+  // одразу після перемикання за графіком оперативні дані ще не встигають, тому 45 хв не робимо висновків
+  var row=SCHED&&SCHED.grid&&SCHED.grid[q]; if(!row||!schedFresh()) return null;
+  var m=kyivNow().min, slot=Math.min(47,Math.floor(m/30)), j=slot; while(j>0&&row.charAt(j-1)===row.charAt(slot)) j--;
+  if(j>0&&m-j*30<45) return null;
+  if(OUT.updated<Date.now()/1000-25*60) return null;
+  var v=OUT.live[q]; return v>=LIVE_OFF?"off":v<=LIVE_ON?"on":null;
+}
+var LIVE_OFF=0.6, LIVE_ON=0.03;
 function codeInfo(code){ // "3.2" або "3.2ю"
   var legal=/ю$/.test(code), q=code.replace(/ю$/,"");
   return {q:q, legal:legal, row:SCHED&&SCHED.grid?SCHED.grid[q]:null};
@@ -187,10 +235,12 @@ function redrawDots(){
     dots.clearLayers(); var n=0, drawn={};
     cells.forEach(function(cell){cell.pts.forEach(function(p){
       if(!p.h||n>4000||!b.contains([p.lat,p.lon])) return; n++;
-      var st=stateNow(codeInfo(p.codes[0]).row);
-      var col=st==="off"?"#f0524f":st==="on"?"#35c26b":"#667";
+      var st=stateNow(codeInfo(p.codes[0]).row), ae=activeEvent(p.rem,p.sp,p.st,p.h);
+      var lv=liveState(codeInfo(p.codes[0]).q); if(lv&&st) st=lv;
+      if(ae) st=ae.kind;
+      var col=st==="off"?"#f0524f":st==="on"?"#35c26b":st==="acc"?"#f59e0b":st==="plan"?"#7c8aff":"#667";
       if(p.poly){var pk=p.poly[0][0].toFixed(6)+p.poly[0][1].toFixed(6)+p.poly.length; if(drawn[pk]) return; drawn[pk]=1}
-      if(p.poly) L.polygon(p.poly,{renderer:renderer,weight:1,color:st==="off"?"#b3302e":st==="on"?"#1f8a48":"#445",fillColor:col,fillOpacity:.8,interactive:false}).addTo(dots);
+      if(p.poly) L.polygon(p.poly,{renderer:renderer,weight:1,color:st==="off"?"#b3302e":st==="on"?"#1f8a48":st==="acc"?"#b06f05":st==="plan"?"#4a57c9":"#445",fillColor:col,fillOpacity:.8,interactive:false}).addTo(dots);
       else L.circleMarker([p.lat,p.lon],{renderer:renderer,radius:map.getZoom()>=18?6:4,weight:1,color:"#fff",fillOpacity:.95,fillColor:col,interactive:false}).addTo(dots);
     })});
   });
@@ -206,18 +256,18 @@ function lookup(lat,lon){
     cells.forEach(function(c){c.pts.forEach(function(p){var d=distM(lat,lon,p.lat,p.lon);
       if(p.poly&&d<300&&inRing(lat,lon,p.poly)) d=0;
       if(p.h){if(d<dh){dh=d;bh=p}}else if(d<ds){ds=d;bs=p}})});
-    if(bh&&dh<=NEAR_M){ showResult({lat:bh.lat,lon:bh.lon,sp:bh.sp,st:bh.st,h:bh.h,codes:bh.codes}); return }
+    if(bh&&dh<=NEAR_M){ showResult({lat:bh.lat,lon:bh.lon,rem:bh.rem,sp:bh.sp,st:bh.st,h:bh.h,codes:bh.codes}); return }
     if(bs&&ds<=STREET_M&&!(bh&&dh<ds)){
-      if(bs.codes.length===1) showResult({lat:lat,lon:lon,sp:bs.sp,st:bs.st,h:"",codes:bs.codes,note:"Визначено за вулицею: на ній усі будинки в одній підчерзі"});
+      if(bs.codes.length===1) showResult({lat:lat,lon:lon,rem:bs.rem,sp:bs.sp,st:bs.st,h:"",codes:bs.codes,note:"Визначено за вулицею: на ній усі будинки в одній підчерзі"});
       else showStreet(lat,lon,bs);
       return;
     }
-    if(bh&&dh<=FAR_M){ showResult({lat:bh.lat,lon:bh.lon,sp:bh.sp,st:bh.st,h:bh.h,codes:bh.codes,note:"Найближча відома адреса, приблизно "+Math.round(dh)+" м від точки дотику"}); return }
+    if(bh&&dh<=FAR_M){ showResult({lat:bh.lat,lon:bh.lon,rem:bh.rem,sp:bh.sp,st:bh.st,h:bh.h,codes:bh.codes,note:"Найближча відома адреса, приблизно "+Math.round(dh)+" м від точки дотику"}); return }
     var bp=null,dp=1e9;
     PLACES.forEach(function(p){var d=distM(lat,lon,p[0],p[1])/1000/p[2];if(d<dp){dp=d;bp=p}});
     if(bp&&dp<=0.8){
       var codes=bp[5].split("|");
-      if(codes.length===1){ showResult({lat:lat,lon:lon,sp:bp[4],st:"",h:"",codes:codes,note:"Визначено за населеним пунктом: увесь він в одній підчерзі"}); return }
+      if(codes.length===1){ showResult({lat:lat,lon:lon,rem:bp[3],sp:bp[4],st:"",h:"",codes:codes,note:"Визначено за населеним пунктом: увесь він в одній підчерзі"}); return }
       showMessage(lat,lon,bp[4]+": тут кілька підчерг ("+codes.map(function(c){return c.replace("ю","")}).filter(function(c,i,a){return a.indexOf(c)===i}).join(", ")+"). Торкніться ближче до будинку чи вулиці або знайдіть адресу через пошук."); return;
     }
     showMessage(lat,lon,"Для цієї точки немає даних про адресу. Торкніться ближче до будинку або скористайтеся пошуком за адресою.");
@@ -236,7 +286,7 @@ function showStreet(lat,lon,p){
       $("shList").innerHTML=hs.map(function(h){return '<button type="button" data-h="'+esc(h)+'">'+esc(h)+'</button>'}).join("")||'<button disabled>Такого будинку в базі немає</button>';
     }
     fill(""); $("shH").oninput=function(){fill(this.value)};
-    $("shList").onclick=function(e){var h=e.target.dataset&&e.target.dataset.h;if(h) showResult({lat:lat,lon:lon,sp:p.sp,st:p.st,h:h,codes:dedupe(m[h])})};
+    $("shList").onclick=function(e){var h=e.target.dataset&&e.target.dataset.h;if(h) showResult({lat:lat,lon:lon,rem:p.rem,sp:p.sp,st:p.st,h:h,codes:dedupe(m[h])})};
   });
 }
 function dedupe(codes){var plain={};codes.forEach(function(c){if(!/ю$/.test(c))plain[c]=1});return codes.filter(function(c){return !(/ю$/.test(c)&&plain[c.slice(0,-1)])})}
@@ -269,22 +319,34 @@ function entryHtml(code,multi){
   if(!fresh){title="Графік не на сьогодні"; until="Нижче графік на "+SCHED.date.split("-").reverse().join(".")}
   else if(cur==="1"){title="Відключення за графіком"; until=j<48?"Світло має з'явитися о "+hm(j):"Відключення триває до кінця доби"}
   else{title="Світло є"; until=j<48?"Наступне відключення о "+hm(j):"До кінця доби відключень за графіком немає"}
+  var lv=fresh?liveState(ci.q):null, fact="";
+  if(lv&&lv!==st){
+    if(lv==="off"){st="off";title="Світла немає";until="За графіком воно мало б бути";fact='<div class="alert fact"><b>Фактичний стан відрізняється від графіка</b>За оперативними даними обленерго ця підчерга зараз відключена.</div>'}
+    else{st="on";title="Світло є";until="За графіком зараз відключення";fact='<div class="alert facton"><b>Фактичний стан відрізняється від графіка</b>За оперативними даними обленерго цю підчергу зараз не відключено.</div>'}
+  }
   var cells=""; for(var i=0;i<48;i++) cells+='<i class="'+(row.charAt(i)==="1"?"x":"")+(i%4===0&&i?" h":"")+'"></i>';
   var ivs=intervals(row).map(function(v){return "<b>"+hm(v[0])+"–"+hm(v[1])+"</b>"}).join(", ");
   return '<div class="entry"><div class="status '+st+'"><div class="dot">'+(st==="on"?ICON_ON:ICON_OFF)+'</div><div><h2>'+title+'</h2><p>'+esc(until)+'</p></div></div>'+
-    '<div style="margin-top:8px">'+head+'</div>'+
+    fact+'<div style="margin-top:8px">'+head+'</div>'+
     '<div class="strip">'+cells+(fresh?'<div class="now" style="left:calc('+(now.min/1440*100).toFixed(2)+'% - 1px)"></div>':"")+'</div>'+
     '<div class="hours"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>'+
     '<div class="ivs">'+(ivs?"Відключення: "+ivs:"Відключень за графіком немає")+'</div></div>';
 }
 function showResult(r){
   lastResult=r;
-  var first=stateNow(codeInfo(r.codes[0]).row)||"";
-  if(r.lat!=null) setPin(r.lat,r.lon,first);
+  var first=stateNow(codeInfo(r.codes[0]).row)||"", evs=eventsFor(r.rem,r.sp,r.st,r.h), ae=activeEvent(r.rem,r.sp,r.st,r.h), now=Date.now()/1000;
+  var lv0=liveState(codeInfo(r.codes[0]).q); if(lv0&&first) first=lv0;
+  if(r.lat!=null) setPin(r.lat,r.lon,ae?ae.kind:first);
   var html='<div class="addr">'+(r.st?esc(r.sp)+', <b>'+esc(r.st)+(r.h?", "+esc(r.h):"")+'</b>':'<b>'+esc(r.sp)+'</b>')+'</div>';
   if(r.note) html+='<div class="note">'+esc(r.note)+'</div>';
+  evs.forEach(function(e){
+    var act=e.from<=now&&(e.kind==="acc"||e.to>=now);
+    if(e.kind==="acc") html+='<div class="alert"><b>Аварійне відключення'+(act?"":" (заплановане)")+'</b>'+(e.note?"Причина: "+esc(e.note)+". ":"")+"Початок: "+fmtT(e.from)+". "+(e.to?(e.to<now?"Очікуваний час відновлення ("+fmtT(e.to)+") уже минув, роботи тривають.":"Орієнтовне відновлення: "+fmtT(e.to)+"."):"")+'</div>';
+    else html+='<div class="alert plan"><b>Планові роботи'+(act?" тривають":"")+'</b>'+fmtT(e.from)+" – "+fmtT(e.to)+(e.note?". "+esc(e.note):"")+'</div>';
+  });
   html+=r.codes.map(function(c){return entryHtml(c,r.codes.length>1)}).join("");
-  html+='<div class="foot">Графік діє, коли «Укренерго» застосовує обмеження. Аварійні відключення не враховано. <a href="#" id="toAbout">Докладніше</a></div>';
+  if(OUT&&OUT.gav&&OUT.gav.active&&outFresh()) html+='<div class="alert fact"><b>Діють аварійні відключення по області</b>Графік нижче зараз може не застосовуватися.</div>';
+  html+='<div class="foot">Графік діє, коли «Укренерго» застосовує обмеження. '+(outFresh()?"Аварії та ремонти: дані обленерго на "+fmtT(OUT.updated)+". ":"Оперативні дані про аварії зараз недоступні. ")+'<a href="#" id="toAbout">Докладніше</a></div>';
   openSheet(html);
   $("toAbout").onclick=function(e){e.preventDefault();openPanel("about")};
 }
@@ -349,7 +411,7 @@ $("inpH").oninput=function(){fillHouses(this.value)};
 $("hList").onclick=function(e){
   var b=e.target.closest("button"),h=b&&b.dataset.h;if(!h)return;
   var codes=housesOf()[h]; $("search").classList.remove("open");
-  var r={lat:null,lon:null,sp:curSp,st:curSt,h:h,codes:dedupe(codes)};
+  var r={lat:null,lon:null,rem:$("selRem").value,sp:curSp,st:curSt,h:h,codes:dedupe(codes)};
   if(pin){map.removeLayer(pin);pin=null}
   showResult(r);
 };
@@ -357,10 +419,10 @@ $("hList").onclick=function(e){
 /* ---------- старт ---------- */
 fetch("data/pts/index.json").then(function(r){return r.json()}).then(function(d){CELLS={};d.forEach(function(k){CELLS[k]=1});redrawDots()}).catch(function(){CELLS={}});
 fetch("data/pts/places.json").then(function(r){return r.json()}).then(function(d){PLACES=d}).catch(function(){});
-loadSchedule();
-setInterval(loadSchedule,5*60*1000);
+loadSchedule(); loadOutages();
+setInterval(function(){loadSchedule();loadOutages()},5*60*1000);
 setInterval(function(){redrawDots();if(lastResult)showResult(lastResult)},60*1000);
-document.addEventListener("visibilitychange",function(){if(!document.hidden)loadSchedule()});
+document.addEventListener("visibilitychange",function(){if(!document.hidden){loadSchedule();loadOutages()}});
 setTimeout(function(){$("hint").style.opacity=0},6000);
 })();
 </script>
