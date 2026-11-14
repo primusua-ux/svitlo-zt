@@ -89,7 +89,7 @@ a{color:var(--accent)}
   <button class="iconbtn" id="btnSearch" aria-label="Пошук за адресою"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
 </div>
 <button class="iconbtn" id="locate" aria-label="Моє місцезнаходження"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></button>
-<div class="hint" id="hint">Торкніться будинку на карті</div>
+<div class="hint" id="hint">Торкніться будинку чи вулиці на карті</div>
 
 <div class="sheet" id="sheet" role="dialog" aria-live="polite">
   <div class="grab"></div><button class="close" id="sheetClose" aria-label="Закрити">×</button>
@@ -126,7 +126,7 @@ a{color:var(--accent)}
 var $=function(id){return document.getElementById(id)};
 var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
 var SCHED=null, CELLS=null, cellCache={}, remIndex=null, remCache={};
-var NEAR_M=45, FAR_M=160;
+var NEAR_M=45, STREET_M=75, FAR_M=150, PLACES=[];
 
 /* ---------- час у Києві ---------- */
 function kyivNow(){
@@ -158,6 +158,7 @@ function intervals(row){var out=[],s=-1;for(var i=0;i<=48;i++){var x=i<48&&row.c
 var map=L.map("map",{zoomControl:false,attributionControl:true,tap:false,preferCanvas:true}).setView([50.2547,28.6587],13);
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
 map.attributionControl.setPrefix(false);
+window.svitloMap=map;
 var dots=L.layerGroup().addTo(map), pin=null, lastResult=null, renderer=L.canvas({padding:.3});
 
 function cellKey(lat,lon){return Math.floor(lat*10)+"_"+Math.floor(lon*10)}
@@ -166,7 +167,7 @@ function loadCell(k){
   if(cellCache[k]) return cellCache[k];
   return cellCache[k]=fetch("data/pts/"+k+".json").then(function(r){return r.json()}).then(function(d){
     var la0=d.o[0], lo0=d.o[1];
-    d.pts=d.p.map(function(a){return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, sp:d.n[d.s[a[2]][0]], st:d.s[a[2]][1], h:a[3], codes:a[4].split("|")}});
+    d.pts=d.p.map(function(a){var n=d.n[d.s[a[2]][0]];return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, rem:n[0], sp:n[1], st:d.s[a[2]][1], h:a[3], codes:a[4].split("|")}});
     return d;
   }).catch(function(){cellCache[k]=null;return null});
 }
@@ -183,7 +184,7 @@ function redrawDots(){
   cellsAround(c.lat,c.lng,Math.max(b.getNorth()-b.getSouth(),.002)/2).then(function(cells){
     dots.clearLayers(); var n=0;
     cells.forEach(function(cell){cell.pts.forEach(function(p){
-      if(n>4000||!b.contains([p.lat,p.lon])) return; n++;
+      if(!p.h||n>4000||!b.contains([p.lat,p.lon])) return; n++;
       var st=stateNow(codeInfo(p.codes[0]).row);
       L.circleMarker([p.lat,p.lon],{renderer:renderer,radius:map.getZoom()>=18?6:4,weight:1,color:"#fff",fillOpacity:.95,
         fillColor:st==="off"?"#f0524f":st==="on"?"#35c26b":"#667",interactive:false}).addTo(dots);
@@ -197,12 +198,46 @@ function lookup(lat,lon){
   $("hint").style.opacity=0;
   if(!CELLS){ showMessage(lat,lon,"Дані адрес ще завантажуються, спробуйте за мить."); return }
   cellsAround(lat,lon,.0025).then(function(cells){
-    var best=null,bd=1e9;
-    cells.forEach(function(c){c.pts.forEach(function(p){var d=distM(lat,lon,p.lat,p.lon);if(d<bd){bd=d;best=p}})});
-    if(!best||bd>FAR_M){ showMessage(lat,lon,"Для цієї точки немає даних про адресу. Спробуйте торкнутися ближче до будинку або скористайтеся пошуком за адресою."); return }
-    // усі записи тієї ж адреси (може бути кілька підчерг)
-    showResult({lat:best.lat,lon:best.lon,sp:best.sp,st:best.st,h:best.h,codes:best.codes,approx:bd>NEAR_M?Math.round(bd):0});
+    var bh=null,dh=1e9,bs=null,ds=1e9;
+    cells.forEach(function(c){c.pts.forEach(function(p){var d=distM(lat,lon,p.lat,p.lon);
+      if(p.h){if(d<dh){dh=d;bh=p}}else if(d<ds){ds=d;bs=p}})});
+    if(bh&&dh<=NEAR_M){ showResult({lat:bh.lat,lon:bh.lon,sp:bh.sp,st:bh.st,h:bh.h,codes:bh.codes}); return }
+    if(bs&&ds<=STREET_M&&!(bh&&dh<ds)){
+      if(bs.codes.length===1) showResult({lat:lat,lon:lon,sp:bs.sp,st:bs.st,h:"",codes:bs.codes,note:"Визначено за вулицею: на ній усі будинки в одній підчерзі"});
+      else showStreet(lat,lon,bs);
+      return;
+    }
+    if(bh&&dh<=FAR_M){ showResult({lat:bh.lat,lon:bh.lon,sp:bh.sp,st:bh.st,h:bh.h,codes:bh.codes,note:"Найближча відома адреса, приблизно "+Math.round(dh)+" м від точки дотику"}); return }
+    var bp=null,dp=1e9;
+    PLACES.forEach(function(p){var d=distM(lat,lon,p[0],p[1])/1000/p[2];if(d<dp){dp=d;bp=p}});
+    if(bp&&dp<=0.8){
+      var codes=bp[5].split("|");
+      if(codes.length===1){ showResult({lat:lat,lon:lon,sp:bp[4],st:"",h:"",codes:codes,note:"Визначено за населеним пунктом: увесь він в одній підчерзі"}); return }
+      showMessage(lat,lon,bp[4]+": тут кілька підчерг ("+codes.map(function(c){return c.replace("ю","")}).filter(function(c,i,a){return a.indexOf(c)===i}).join(", ")+"). Торкніться ближче до будинку чи вулиці або знайдіть адресу через пошук."); return;
+    }
+    showMessage(lat,lon,"Для цієї точки немає даних про адресу. Торкніться ближче до будинку або скористайтеся пошуком за адресою.");
   });
+}
+function showStreet(lat,lon,p){
+  lastResult=null; setPin(lat,lon,"");
+  openSheet('<div class="addr">'+esc(p.sp)+', <b>'+esc(p.st)+'</b></div><div class="note">На цій вулиці кілька підчерг. Оберіть будинок:</div>'+
+    '<input id="shH" placeholder="Номер будинку" autocomplete="off" style="width:100%;height:46px;margin-top:8px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:16px;padding:0 12px">'+
+    '<div class="list" id="shList" style="max-height:30vh"><button disabled>Завантаження…</button></div>');
+  loadRem(p.rem).then(function(d){
+    var g=(d[p.sp]||{})[p.st]||{}, m={};
+    Object.keys(g).forEach(function(code){g[code].split(",").forEach(function(h){(m[h]=m[h]||[]).push(code)})});
+    function fill(q){
+      var nq=normH(q), hs=Object.keys(m).filter(function(h){return !nq||h.indexOf(nq)===0}).sort(function(a,b){return (parseInt(a)||1e9)-(parseInt(b)||1e9)||a.localeCompare(b,"uk")}).slice(0,150);
+      $("shList").innerHTML=hs.map(function(h){return '<button type="button" data-h="'+esc(h)+'">'+esc(h)+'</button>'}).join("")||'<button disabled>Такого будинку в базі немає</button>';
+    }
+    fill(""); $("shH").oninput=function(){fill(this.value)};
+    $("shList").onclick=function(e){var h=e.target.dataset&&e.target.dataset.h;if(h) showResult({lat:lat,lon:lon,sp:p.sp,st:p.st,h:h,codes:dedupe(m[h])})};
+  });
+}
+function dedupe(codes){var plain={};codes.forEach(function(c){if(!/ю$/.test(c))plain[c]=1});return codes.filter(function(c){return !(/ю$/.test(c)&&plain[c.slice(0,-1)])})}
+function loadRem(k){
+  var idx=remIndex?Promise.resolve(remIndex):fetch("data/index.json").then(function(r){return r.json()}).then(function(d){return remIndex=d});
+  return idx.then(function(ix){return remCache[k]||(remCache[k]=fetch("data/"+ix[k].file).then(function(r){return r.json()}))});
 }
 function setPin(lat,lon,cls){
   if(pin) map.removeLayer(pin);
@@ -241,8 +276,8 @@ function showResult(r){
   lastResult=r;
   var first=stateNow(codeInfo(r.codes[0]).row)||"";
   if(r.lat!=null) setPin(r.lat,r.lon,first);
-  var html='<div class="addr">'+esc(r.sp)+', <b>'+esc(r.st)+(r.h?", "+esc(r.h):"")+'</b></div>';
-  if(r.approx) html+='<div class="note">Найближча відома адреса, приблизно '+r.approx+' м від точки дотику</div>';
+  var html='<div class="addr">'+(r.st?esc(r.sp)+', <b>'+esc(r.st)+(r.h?", "+esc(r.h):"")+'</b>':'<b>'+esc(r.sp)+'</b>')+'</div>';
+  if(r.note) html+='<div class="note">'+esc(r.note)+'</div>';
   html+=r.codes.map(function(c){return entryHtml(c,r.codes.length>1)}).join("");
   html+='<div class="foot">Графік діє, коли «Укренерго» застосовує обмеження. Аварійні відключення не враховано. <a href="#" id="toAbout">Докладніше</a></div>';
   openSheet(html);
@@ -264,13 +299,13 @@ $("btnSearch").onclick=function(){openPanel("search")};
 $("brand").onclick=function(){openPanel("about")};
 
 /* ---------- пошук за адресою ---------- */
+function loadRem0(){return remIndex?Promise.resolve(remIndex):fetch("data/index.json").then(function(r){return r.json()}).then(function(d){return remIndex=d})}
 function norm(s){return String(s).toLowerCase().replace(/[ʼ'’`"]/g,"").replace(/ё/g,"е").replace(/\s+/g," ").trim()}
 function normH(s){return String(s).toUpperCase().replace(/[\s-]/g,"")}
 var curRem=null,curSp=null,curSt=null;
 function initSearch(){
-  if(remIndex) return;
-  fetch("data/index.json").then(function(r){return r.json()}).then(function(d){
-    remIndex=d; var s=$("selRem");
+  var s=$("selRem"); if(s.options.length>1) return;
+  loadRem0().then(function(d){
     Object.keys(d).sort(function(a,b){return a.localeCompare(b,"uk")}).forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=k;s.appendChild(o)});
   });
 }
@@ -278,7 +313,7 @@ $("selRem").onchange=function(){
   var k=this.value, sp=$("selSp"); curRem=null;curSp=null;curSt=null;
   sp.innerHTML='<option value="">Оберіть населений пункт</option>'; sp.disabled=true; resetStreet();
   if(!k) return;
-  (remCache[k]||(remCache[k]=fetch("data/"+remIndex[k].file).then(function(r){return r.json()}))).then(function(d){
+  loadRem(k).then(function(d){
     curRem=d;
     Object.keys(d).sort(function(a,b){var ca=/^м\./.test(a)?0:1,cb=/^м\./.test(b)?0:1;return ca-cb||a.replace(/^\S+\s/,"").localeCompare(b.replace(/^\S+\s/,""),"uk")})
       .forEach(function(n){var o=document.createElement("option");o.value=n;o.textContent=n;sp.appendChild(o)});
@@ -309,13 +344,14 @@ $("inpH").oninput=function(){fillHouses(this.value)};
 $("hList").onclick=function(e){
   var b=e.target.closest("button"),h=b&&b.dataset.h;if(!h)return;
   var codes=housesOf()[h]; $("search").classList.remove("open");
-  var r={lat:null,lon:null,sp:curSp,st:curSt,h:h,codes:codes,approx:0};
+  var r={lat:null,lon:null,sp:curSp,st:curSt,h:h,codes:dedupe(codes)};
   if(pin){map.removeLayer(pin);pin=null}
   showResult(r);
 };
 
 /* ---------- старт ---------- */
 fetch("data/pts/index.json").then(function(r){return r.json()}).then(function(d){CELLS={};d.forEach(function(k){CELLS[k]=1});redrawDots()}).catch(function(){CELLS={}});
+fetch("data/pts/places.json").then(function(r){return r.json()}).then(function(d){PLACES=d}).catch(function(){});
 loadSchedule();
 setInterval(loadSchedule,5*60*1000);
 setInterval(function(){redrawDots();if(lastResult)showResult(lastResult)},60*1000);
