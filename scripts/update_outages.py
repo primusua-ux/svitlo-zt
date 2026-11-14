@@ -6,6 +6,7 @@ import html, json, re, sys, time, urllib.request
 from collections import defaultdict, Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from norm import street_key, house_key, place_key
 
 D, OUT = sys.argv[1], sys.argv[2]
@@ -21,7 +22,12 @@ def get(url, tries=3):
             if i == tries - 1: raise
             time.sleep(2 + 3 * i)
 
+KYIV = ZoneInfo("Europe/Kyiv")
 def ts(s):
+    """Час у сервісі позначений як +00:00, але насправді це київський місцевий час (звірено з графіком)."""
+    try: return int(datetime.fromisoformat(s[:19]).replace(tzinfo=KYIV).timestamp())
+    except Exception: return 0
+def ts_utc(s):
     try: return int(datetime.fromisoformat(s).timestamp())
     except Exception: return 0
 
@@ -96,7 +102,7 @@ try:
         if not re.search(r"аварійн\w* відключен|\bгав\b|спецгав|екстрен\w* відключен|графіки\W+(?:погодинних відключень\W+)?(?:електроенергії\W+)?(?:наразі\W+)?не діють", low): continue
         off = bool(re.search(r"скасован|повертаємось до графік", low))
         on = bool(re.search(r"запроваджено|застосовано|застосовуються|вводяться|не діють|діють екстрен", low))
-        if off or on: last = (int(pid), off, ts(dt))
+        if off or on: last = (int(pid), off, ts_utc(dt))
     gav["checked"] = bool(posts)
     if last:
         pid, off, when = last

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Забирає графік погодинних відключень з ztoe.com.ua і пише data/schedule.json.
+"""Забирає графік погодинних відключень з ztoe.com.ua і пише data/schedule.json,
+потім оновлює діючі відключення і публікує все у гілку live.
 Лише стандартна бібліотека Python."""
 import html, json, re, sys, urllib.request
 from datetime import datetime, timezone
