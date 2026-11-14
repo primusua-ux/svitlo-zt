@@ -1,0 +1,22 @@
+name: Оновлення графіка
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: schedule
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/update_schedule.py data/schedule.json
+      - run: |
+          if [ -n "$(git status --porcelain data/schedule.json)" ]; then
+            git config user.name "schedule-bot"
+            git config user.email "schedule-bot@users.noreply.github.com"
+            git add data/schedule.json
+            git commit -m "Графік: оновлення $(date -u +%FT%RZ)"
+            git push
+          fi
