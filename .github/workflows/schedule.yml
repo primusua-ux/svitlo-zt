@@ -1,7 +1,7 @@
 name: Оновлення графіка
 on:
   schedule:
-    - cron: "7,22,37,52 * * * *"
+    - cron: "8,22,37,52 * * * *"
   workflow_dispatch:
   push:
     paths: ["scripts/update_schedule.py", ".github/workflows/schedule.yml"]
