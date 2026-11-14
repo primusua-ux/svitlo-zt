@@ -19,7 +19,9 @@ def house(h):
 tree = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(set))))
 for r in list(csv.reader(open(src, encoding="utf-8-sig")))[1:]:
     rem, sp, st, hs, q, pq, typ = r
-    key = f"{q}.{pq}" + ("" if typ.startswith("побутові") else "ю")
+    # "0" = адреса не вимикається за графіком (лише аварійні відключення)
+    key = ("0" if q == "0" else f"{q}.{pq}") + ("" if typ.startswith("побутові") else "ю")
+    rem, sp, st = (re.sub(r"\s+", " ", x).strip() for x in (rem, sp, st))
     for h in hs.split(","):
         h = house(h)
         if h: tree[rem][settlement(sp)][st.strip()][key].add(h)

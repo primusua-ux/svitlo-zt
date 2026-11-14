@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "8,22,37,52 * * * *"
   workflow_dispatch:
+    inputs:
+      addresses:
+        description: "Також оновити базу адрес і координати"
+        type: boolean
+        default: false
   push:
     paths: ["scripts/update_schedule.py", ".github/workflows/schedule.yml"]
 permissions:
@@ -14,12 +19,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 scripts/update_schedule.py data/schedule.json
+      - name: База адрес і координати (раз на добу після 04:00 за Києвом, або вручну)
+        continue-on-error: true
+        run: |
+          TODAY=$(TZ=Europe/Kyiv date +%F); H=$(TZ=Europe/Kyiv date +%H)
+          LAST=$(cat data/addresses_updated.txt 2>/dev/null || echo none)
+          if [ "${{ inputs.addresses }}" = "true" ] || { [ "$H" -ge 4 ] && [ "$LAST" != "$TODAY" ]; }; then
+            python3 scripts/fetch_addresses.py data/ztoe_addresses.csv
+            python3 scripts/build_addresses.py data/ztoe_addresses.csv data
+            python3 scripts/build_points.py data
+            echo "$TODAY" > data/addresses_updated.txt
+          fi
       - run: |
-          if [ -n "$(git status --porcelain data/schedule.json)" ]; then
+          if [ -n "$(git status --porcelain data)" ]; then
             git config user.name "schedule-bot"
             git config user.email "schedule-bot@users.noreply.github.com"
-            git add data/schedule.json
-            git commit -m "Графік: оновлення $(date -u +%FT%RZ)"
+            git add -A data
+            git commit -m "Дані: оновлення $(date -u +%FT%RZ)"
             git pull --rebase
             git push
           fi

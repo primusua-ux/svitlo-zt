@@ -191,6 +191,7 @@ a{color:var(--accent)}
     <li><span class="sw" style="background:#667"></span><span><b>Сірий.</b> Графік на сьогодні ще не опубліковано.</span></li>
     <li><span class="sw" style="border-radius:50%;background:var(--on);border:2px solid #fff;width:16px;height:16px;margin:4px 3px"></span><span><b>Кружечок</b> замість контуру: на карті є лише точка адреси без обрису будівлі.</span></li>
   </ul>
+  <p>Деякі адреси (лікарні, об'єкти інфраструктури і будинки, що живляться з тих самих ліній) не вимикаються за графіком. Вони завжди зелені, крім випадків аварій.</p>
   <p>Не зафарбовані будинки відсутні в базі обленерго або не мають номера на карті. Спробуйте пошук за адресою.</p>
   <h4>Смуга в картці</h4>
   <p>Смуга показує добу з 00:00 до 24:00: червоні відрізки це відключення за графіком, біла риска це поточний час.</p>
@@ -274,6 +275,8 @@ function liveState(q){
 var LIVE_OFF=0.6, LIVE_ON=0.03;
 function codeInfo(code){ // "3.2" або "3.2ю"
   var legal=/ю$/.test(code), q=code.replace(/ю$/,"");
+  // "0": адреса не вимикається за графіком (лише аварійні відключення)
+  if(q==="0") return {q:q, legal:legal, nosched:true, row:SCHED?new Array(49).join("0"):null};
   return {q:q, legal:legal, row:SCHED&&SCHED.grid?SCHED.grid[q]:null};
 }
 function stateNow(row){ if(!row||!schedFresh()) return null; return row.charAt(Math.min(47,Math.floor(kyivNow().min/30)))==="1"?"off":"on" }
@@ -335,7 +338,7 @@ function lookup(lat,lon){
       if(p.h){if(d<dh){dh=d;bh=p}}else if(d<ds){ds=d;bs=p}})});
     if(bh&&dh<=NEAR_M){ showResult({lat:bh.lat,lon:bh.lon,rem:bh.rem,sp:bh.sp,st:bh.st,h:bh.h,codes:bh.codes}); return }
     if(bs&&ds<=STREET_M&&!(bh&&dh<ds)){
-      if(bs.codes.length===1) showResult({lat:lat,lon:lon,rem:bs.rem,sp:bs.sp,st:bs.st,h:"",codes:bs.codes,note:"Визначено за вулицею: на ній усі будинки в одній підчерзі"});
+      if(bs.codes.length===1) showResult({lat:lat,lon:lon,rem:bs.rem,sp:bs.sp,st:bs.st,h:"",codes:bs.codes,note:"Визначено за вулицею: усі будинки на ній мають однаковий графік"});
       else showStreet(lat,lon,bs);
       return;
     }
@@ -344,8 +347,8 @@ function lookup(lat,lon){
     PLACES.forEach(function(p){var d=distM(lat,lon,p[0],p[1])/1000/p[2];if(d<dp){dp=d;bp=p}});
     if(bp&&dp<=0.8){
       var codes=bp[5].split("|");
-      if(codes.length===1){ showResult({lat:lat,lon:lon,rem:bp[3],sp:bp[4],st:"",h:"",codes:codes,note:"Визначено за населеним пунктом: увесь він в одній підчерзі"}); return }
-      showMessage(lat,lon,bp[4]+": тут кілька підчерг ("+codes.map(function(c){return c.replace("ю","")}).filter(function(c,i,a){return a.indexOf(c)===i}).join(", ")+"). Торкніться ближче до будинку чи вулиці або знайдіть адресу через пошук."); return;
+      if(codes.length===1){ showResult({lat:lat,lon:lon,rem:bp[3],sp:bp[4],st:"",h:"",codes:codes,note:"Визначено за населеним пунктом: усі адреси в ньому мають однаковий графік"}); return }
+      showMessage(lat,lon,bp[4]+": тут кілька підчерг ("+codes.map(function(c){c=c.replace("ю","");return c==="0"?"без відключень":c}).filter(function(c,i,a){return a.indexOf(c)===i}).join(", ")+"). Торкніться ближче до будинку чи вулиці або знайдіть адресу через пошук."); return;
     }
     showMessage(lat,lon,"Для цієї точки немає даних про адресу. Торкніться ближче до будинку або скористайтеся пошуком за адресою.");
   });
@@ -410,7 +413,7 @@ var ICON_ON='<svg viewBox="0 0 24 24"><path d="M9 21h6v-1H9zm3-19a7 7 0 0 0-4 12
 var ICON_OFF='<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
 function entryHtml(code,multi){
   var ci=codeInfo(code), row=ci.row, fresh=schedFresh();
-  var head='<span class="tag">Підчерга '+esc(ci.q)+'</span>'+(multi||ci.legal?'<span class="tag">'+(ci.legal?"нежитлові приміщення":"житлові (побутові)")+'</span>':"");
+  var head=(ci.nosched?'<span class="tag">Не вимикається за графіком</span>':'<span class="tag">Підчерга '+esc(ci.q)+'</span>')+(multi||ci.legal?'<span class="tag">'+(ci.legal?"нежитлові приміщення":"житлові (побутові)")+'</span>':"");
   if(!row) return '<div class="entry"><div class="status unk"><div class="dot">'+ICON_OFF+'</div><div><h2>Графік недоступний</h2><p>'+head+'</p></div></div></div>';
   var now=kyivNow(), slot=Math.min(47,Math.floor(now.min/30)), cur=row.charAt(slot), j=slot;
   while(j<48&&row.charAt(j)===cur) j++;
@@ -422,6 +425,10 @@ function entryHtml(code,multi){
   if(lv&&lv!==st){
     if(lv==="off"){st="off";title="Світла немає";until="За графіком воно мало б бути";fact='<div class="alert fact"><b>Фактичний стан відрізняється від графіка</b>За оперативними даними обленерго ця підчерга зараз відключена.</div>'}
     else{st="on";title="Світло є";until="За графіком зараз відключення";fact='<div class="alert facton"><b>Фактичний стан відрізняється від графіка</b>За оперативними даними обленерго цю підчергу зараз не відключено.</div>'}
+  }
+  if(ci.nosched&&fresh){
+    return '<div class="entry"><div class="status on"><div class="dot">'+ICON_ON+'</div><div><h2>Світло є</h2><p>Ця адреса не вимикається за графіком погодинних відключень, лише під час аварій</p></div></div>'+
+      '<div style="margin-top:8px">'+head+'</div></div>';
   }
   var cells=""; for(var i=0;i<48;i++) cells+='<i class="'+(row.charAt(i)==="1"?"x":"")+(i%4===0&&i?" h":"")+'"></i>';
   var ivs=intervals(row).map(function(v){return "<b>"+hm(v[0])+"–"+hm(v[1])+"</b>"}).join(", ");
@@ -556,7 +563,7 @@ function housesOf(){ // будинок -> [коди]
 function fillHouses(q){
   var m=housesOf(), nq=normH(q), box=$("hList");
   var hs=Object.keys(m).filter(function(h){return !nq||h.indexOf(nq)===0}).sort(function(a,b){return (parseInt(a)||1e9)-(parseInt(b)||1e9)||a.localeCompare(b,"uk")}).slice(0,120);
-  box.innerHTML=hs.map(function(h){return '<button type="button" data-h="'+esc(h)+'">'+esc(h)+' <span style="color:var(--muted)">· '+m[h].map(function(c){return c.replace("ю"," юр.")}).join(", ")+'</span></button>'}).join("")||'<button type="button" disabled>Такого будинку в базі немає</button>';
+  box.innerHTML=hs.map(function(h){return '<button type="button" data-h="'+esc(h)+'">'+esc(h)+' <span style="color:var(--muted)">· '+m[h].map(function(c){return (/^0/.test(c)?"без відключень":c.replace("ю",""))+(/ю$/.test(c)?" юр.":"")}).join(", ")+'</span></button>'}).join("")||'<button type="button" disabled>Такого будинку в базі немає</button>';
   box.hidden=false;
 }
 $("inpH").oninput=function(){fillHouses(this.value)};
