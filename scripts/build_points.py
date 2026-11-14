@@ -33,6 +33,7 @@ def street_key(s):
         if rx.search(s):
             s = rx.sub(" ", s)
             if typ is None or typ == "vul": typ = t
+    s = re.sub(r"(?<![\w-])(?:мікрорайон|мкрн|мкр-н|мкр|масив|квартал|кв-л|урочище|ур|територія|містечко)(?:\.|(?![\w-]))", " ", s)
     s = re.sub(r"[.,;()№]", " ", s)
     toks = [t for t in s.replace("-", " ").split() if len(t) > 1 or t.isdigit()]
     return typ or "vul", " ".join(sorted(toks))
