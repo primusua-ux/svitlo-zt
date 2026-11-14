@@ -148,8 +148,11 @@ for ln in gzip.open(f"{D}/osm/streets.tsv.gz", "rt", encoding="utf-8"):
                     c = (int(la * 10) + dy, int(lo * 10) + dx)
                     alias[c][a].add(b); alias[c][b].add(a)
 
-def find_street(m, sk, la, lo):
-    """Ключ вулиці в базі населеного пункту m для OSM-ключа sk (з урахуванням типу і перейменувань)."""
+def _toks(name):
+    t = name.split(); return {x for x in t if x.isdigit()}, {x for x in t if not x.isdigit()}
+
+def find_street(m, sk, la, lo, fuzzy=True):
+    """Ключ вулиці в базі населеного пункту m для OSM-ключа sk (тип, перейменування, скорочені імена)."""
     if sk in m: return sk
     alts = [k for k in m if k[1] == sk[1]]
     if len(alts) == 1: return alts[0]
@@ -157,48 +160,18 @@ def find_street(m, sk, la, lo):
         if ak in m: return ak
         alts = [k for k in m if k[1] == ak[1]]
         if len(alts) == 1: return alts[0]
+    if fuzzy:
+        # "1-й провулок Остапа Вишні" ~ "пров 1-й О.Вишні": ті самі номери, слова одного є частиною іншого
+        d1, w1 = _toks(sk[1])
+        if w1:
+            alts = []
+            for k in m:
+                if k[0] != sk[0]: continue
+                d2, w2 = _toks(k[1])
+                if d1 == d2 and w2 and (w1 < w2 or w2 < w1) and max((w1 & w2), key=len, default="")[:1] and len(max(w1 & w2, key=len)) >= 4:
+                    alts.append(k)
+            if len(alts) == 1: return alts[0]
     return None
-
-stats = Counter(); house_rows = []; cells = defaultdict(list); matched_houses = set(); seen = set(); street_hit = set()
-for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
-    la, lo, hn, st, pl, city, sub = ln.rstrip("\n").split("\t")
-    la = float(la); lo = float(lo); stats["osm"] += 1
-    st = st or pl
-    if not st or not hn: stats["no_street"] += 1; continue
-    sk = street_key(st); hk = house_key(hn); hit = None
-    cands = candidates(la, lo, city)
-    if not cands: stats["no_place"] += 1; continue
-    st_found = False
-    for rem, sp in cands:
-        m = zt[(rem, sp)]; k = find_street(m, sk, la, lo)
-        if k is None: continue
-        st_found = True
-        if hk in m[k]: hit = (rem, sp, k, m[k][hk]); break
-    if not hit:
-        stats["street_ok_house_missing" if st_found else "street_missing"] += 1; continue
-    rem, sp, k, codes = hit
-    key = (rem, sp, k, hk, round(la, 4), round(lo, 4))
-    if key in seen: continue
-    seen.add(key); matched_houses.add((rem, sp, k, hk)); stats["matched"] += 1
-    house_rows.append((la, lo, rem, sp, k, hk, hn.strip(), "|".join(collapse(codes))))
-
-# рівень вулиці: відрізки доріг з назвою
-sseen = set()
-for la, lo, name, old in street_rows:
-    cands = candidates(la, lo)
-    if not cands: continue
-    for nm in [name] + [o for o in re.split(r"[;,]", old) if o.strip()]:
-        sk = street_key(nm); done = False
-        for rem, sp in cands[:3]:
-            m = zt[(rem, sp)]; k = find_street(m, sk, la, lo)
-            if k is None: continue
-            key = (rem, sp, k, round(la, 3), round(lo * 0.65, 3))
-            if key not in sseen:
-                sseen.add(key); street_hit.add((rem, sp, k)); stats["street_pts"] += 1
-                codes = collapse([c for cs in m[k].values() for c in cs])
-                cells[(math.floor(la * 10), math.floor(lo * 10))].append((la, lo, rem, sp, disp[(rem, sp, k)], "", "|".join(codes)))
-            done = True; break
-        if done: break
 
 # рівень населеного пункту
 plist = []; pl_hit = set()
@@ -214,6 +187,110 @@ for la, lo, kind, name, old in places:
             pl_hit.add((rem, sp))
             codes = collapse([x for hs in zt[(rem, sp)].values() for cs in hs.values() for x in cs])
             plist.append([round(la, 5), round(lo, 5), RAD[kind], rem, sp, "|".join(codes)]); break
+
+# розширений пошук: землі громади бувають далеко від центру села (масиви забудови біля міста)
+spgrid = defaultdict(list)
+for q in plist: spgrid[(int(q[0] * 10), int(q[1] * 10))].append(q)
+def ext_cands(la, lo, exclude, rmax=8.0):
+    out = []
+    for dy in (-1, 0, 1):
+        for dx in (-2, -1, 0, 1, 2):
+            for q in spgrid.get((int(la * 10) + dy, int(lo * 10) + dx), ()):
+                if (q[3], q[4]) in exclude: continue
+                d = dist(la, lo, q[0], q[1])
+                if d <= rmax: out.append((d, (q[3], q[4])))
+    return [x[1] for x in sorted(out)]
+freq = Counter()
+for m in zt.values():
+    for nm in {k[1] for k in m}: freq[nm] += 1
+COMMON = 25
+anchors = defaultdict(list)   # клітинка ~1 км -> [(lat, lon, rem, sp)]
+def add_anchor(la, lo, rem, sp): anchors[(int(la * 100), int(lo * 100))].append((la, lo, rem, sp))
+def anchored(la, lo, r=0.8):
+    out = set()
+    for dy in (-1, 0, 1):
+        for dx in (-2, -1, 0, 1, 2):
+            for a in anchors.get((int(la * 100) + dy, int(lo * 100) + dx), ()):
+                if dist(la, lo, a[0], a[1]) <= r: out.add((a[2], a[3]))
+    return out
+
+stats = Counter(); house_rows = []; cells = defaultdict(list); matched_houses = set(); seen = set(); street_hit = set()
+def take_house(la, lo, rem, sp, k, hk, hn, codes):
+    key = (rem, sp, k, hk, round(la, 4), round(lo, 4))
+    if key in seen: return
+    seen.add(key); matched_houses.add((rem, sp, k, hk)); stats["matched"] += 1
+    house_rows.append((la, lo, rem, sp, k, hk, hn.strip(), "|".join(collapse(codes))))
+
+pend_h = []
+for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
+    la, lo, hn, st, pl, city, sub = ln.rstrip("\n").split("\t")
+    la = float(la); lo = float(lo); stats["osm"] += 1
+    st = st or pl
+    if not st or not hn: stats["no_street"] += 1; continue
+    sk = street_key(st); hk = house_key(hn); hit = None
+    cands = candidates(la, lo, city)
+    for rem, sp in cands:
+        m = zt[(rem, sp)]; k = find_street(m, sk, la, lo)
+        if k is not None and hk in m[k]: hit = (rem, sp, k, m[k][hk]); break
+    if hit: take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3])
+    else: pend_h.append((la, lo, hn, sk, hk, tuple(cands)))
+
+def ext_house(la, lo, sk, hk, pool):
+    hits = []
+    for rem, sp in pool:
+        m = zt[(rem, sp)]; k = find_street(m, sk, la, lo)
+        if k is not None and hk in m[k]: hits.append((rem, sp, k, m[k][hk]))
+    return hits[0] if len(hits) == 1 else None
+
+rest = []
+for la, lo, hn, sk, hk, cands in pend_h:          # прохід А: рідкісні назви вулиць
+    hit = ext_house(la, lo, sk, hk, ext_cands(la, lo, cands)) if freq[sk[1]] <= COMMON else None
+    if hit:
+        take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3]); add_anchor(la, lo, hit[0], hit[1]); stats["ext_house"] += 1
+    else: rest.append((la, lo, hn, sk, hk, cands))
+
+# рівень вулиці: відрізки доріг з назвою
+sseen = set(); pend_s = []
+def take_street(la, lo, rem, sp, k):
+    key = (rem, sp, k, round(la, 3), round(lo * 0.65, 3))
+    if key in sseen: return
+    sseen.add(key); street_hit.add((rem, sp, k)); stats["street_pts"] += 1
+    codes = collapse([c for cs in zt[(rem, sp)][k].values() for c in cs])
+    cells[(math.floor(la * 10), math.floor(lo * 10))].append((la, lo, rem, sp, disp[(rem, sp, k)], "", "|".join(codes)))
+
+def street_names(name, old): return [name] + [o for o in re.split(r"[;,]", old) if o.strip()]
+for la, lo, name, old in street_rows:
+    cands = candidates(la, lo); done = False
+    for nm in street_names(name, old):
+        sk = street_key(nm)
+        for rem, sp in cands[:3]:
+            k = find_street(zt[(rem, sp)], sk, la, lo)
+            if k is not None: take_street(la, lo, rem, sp, k); done = True; break
+        if done: break
+    if not done: pend_s.append((la, lo, name, old, tuple(cands)))
+
+rest_s = []
+for la, lo, name, old, cands in pend_s:           # прохід А для вулиць
+    done = False
+    for nm in street_names(name, old):
+        sk = street_key(nm)
+        if freq[sk[1]] > COMMON: continue
+        hits = [(rem, sp, k) for rem, sp in ext_cands(la, lo, cands) for k in [find_street(zt[(rem, sp)], sk, la, lo, fuzzy=True)] if k is not None]
+        if len(hits) == 1:
+            take_street(la, lo, *hits[0]); add_anchor(la, lo, hits[0][0], hits[0][1]); stats["ext_street"] += 1; done = True; break
+    if not done: rest_s.append((la, lo, name, old, cands))
+
+for la, lo, hn, sk, hk, cands in rest:            # прохід Б: поширені назви поруч із уже знайденими сусідами
+    hit = ext_house(la, lo, sk, hk, anchored(la, lo) - set(cands))
+    if hit: take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3]); stats["anchor_house"] += 1
+    else: stats["house_unmatched"] += 1
+for la, lo, name, old, cands in rest_s:
+    pool = anchored(la, lo) - set(cands)
+    if not pool: continue
+    for nm in street_names(name, old):
+        sk = street_key(nm)
+        hits = [(rem, sp, k) for rem, sp in pool for k in [find_street(zt[(rem, sp)], sk, la, lo)] if k is not None]
+        if len(hits) == 1: take_street(la, lo, *hits[0]); stats["anchor_street"] += 1; break
 
 # та сама адреса у далеких одна від одної точках: лишаємо найближчу до центру свого населеного пункту
 center = {(p[3], p[4]): (p[0], p[1]) for p in plist}
