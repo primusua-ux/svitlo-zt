@@ -39,6 +39,12 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
 .tabs{display:flex;gap:6px;margin:0 0 10px}
 .tabs button{flex:1;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:14px}
 .tabs button.on{background:var(--panel2);color:var(--text);border-color:var(--muted)}
+#tabAcc{border-color:var(--acc);color:var(--acc)} #tabAcc.on{background:var(--acc);color:#1a1205;border-color:var(--acc);font-weight:600}
+#tabPlan{border-color:var(--plan);color:var(--plan)} #tabPlan.on{background:var(--plan);color:#0d1030;border-color:var(--plan);font-weight:600}
+.k0 .grp{border-color:var(--acc);background:rgba(245,158,11,.13)} .k0 .grp summary{background:var(--acc);color:#1a1205} .k0 .grp summary span{color:#4a3206}
+.k0 .row{border-top-color:rgba(245,158,11,.35)}
+.k1 .grp{border-color:var(--plan);background:rgba(124,138,255,.13)} .k1 .grp summary{background:var(--plan);color:#0d1030} .k1 .grp summary span{color:#252c66}
+.k1 .row{border-top-color:rgba(124,138,255,.35)} .k1 .row em{color:var(--plan)}
 .grp{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--panel);overflow:hidden}
 .grp summary{padding:12px;font-size:15px;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px}
 .grp summary::-webkit-details-marker{display:none}
@@ -466,7 +472,7 @@ function updateBadge(){
   b.style.display=n?"grid":"none"; b.textContent=n>999?"999+":n;
 }
 function renderAcc(){
-  var box=$("accList"), info=$("accInfo");
+  var box=$("accList"), info=$("accInfo"); box.className="k"+accTab;
   if(!OUT){info.textContent="Оперативні дані ще завантажуються або зараз недоступні.";box.innerHTML="";return}
   var items=accItems(accTab), q=norm($("accFilter").value), now=Date.now()/1000;
   if(q) items=items.filter(function(i){return norm(i.sp+" "+i.st).indexOf(q)>=0});
