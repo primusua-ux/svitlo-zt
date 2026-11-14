@@ -17,7 +17,7 @@ jobs:
       - name: Вирізати Житомирщину і відфільтрувати
         run: |
           osmium extract -b 27.1,49.5,29.9,51.8 /tmp/ua.osm.pbf -o /tmp/zt.osm.pbf
-          osmium tags-filter /tmp/zt.osm.pbf nwr/addr:housenumber n/place w/highway -o /tmp/f.osm.pbf
+          osmium tags-filter /tmp/zt.osm.pbf nwr/addr:housenumber n/place w/highway wr/building -o /tmp/f.osm.pbf
           osmium export /tmp/f.osm.pbf -f geojsonseq -o /tmp/f.geojsonseq
           ls -la /tmp/*.pbf /tmp/f.geojsonseq
       - run: python3 scripts/osm_extract.py /tmp/f.geojsonseq data/osm
