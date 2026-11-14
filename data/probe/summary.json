@@ -1,0 +1,83 @@
+{
+ "entry": {
+  "status": 200,
+  "len": 744,
+  "headers": {
+   "Content-Type": "text/html; charset=UTF-8",
+   "Cache-Control": "max-age=0, must-revalidate, private"
+  }
+ },
+ "docs": {
+  "status": 404,
+  "len": 286,
+  "headers": {}
+ },
+ "accidents": {
+  "status": 200,
+  "len": 24688,
+  "headers": {
+   "Content-Type": "application/ld+json; charset=utf-8",
+   "access-control-allow-origin": "https://ztoe-poweron.inneti.net",
+   "Cache-Control": "max-age=60, public, s-maxage=120"
+  }
+ },
+ "accidents_json": {
+  "status": 200,
+  "len": 24604,
+  "headers": {
+   "Content-Type": "application/ld+json; charset=utf-8",
+   "access-control-allow-origin": "https://ztoe-poweron.inneti.net",
+   "Cache-Control": "max-age=60, public, s-maxage=120"
+  }
+ },
+ "otgs": {
+  "status": 200,
+  "len": 2750,
+  "headers": {
+   "Content-Type": "application/ld+json; charset=utf-8",
+   "access-control-allow-origin": "https://ztoe-poweron.inneti.net",
+   "Cache-Control": "max-age=3600, public, s-maxage=7200"
+  }
+ },
+ "cities": {
+  "status": 200,
+  "len": 6719,
+  "headers": {
+   "Content-Type": "application/ld+json; charset=utf-8",
+   "access-control-allow-origin": "https://ztoe-poweron.inneti.net",
+   "Cache-Control": "max-age=3600, public, s-maxage=7200"
+  }
+ },
+ "streets": {
+  "status": 200,
+  "len": 4617,
+  "headers": {
+   "Content-Type": "application/ld+json; charset=utf-8",
+   "access-control-allow-origin": "https://ztoe-poweron.inneti.net",
+   "Cache-Control": "max-age=60, public, s-maxage=120"
+  }
+ },
+ "address_queues": {
+  "status": 200,
+  "len": 1130,
+  "headers": {
+   "Content-Type": "application/ld+json; charset=utf-8",
+   "access-control-allow-origin": "https://ztoe-poweron.inneti.net",
+   "Cache-Control": "max-age=3600, public, s-maxage=7200"
+  }
+ },
+ "options": {
+  "status": 200,
+  "len": 2372,
+  "headers": {
+   "Content-Type": "application/ld+json; charset=utf-8",
+   "access-control-allow-origin": "https://ztoe-poweron.inneti.net",
+   "Cache-Control": "max-age=60, public, s-maxage=120"
+  }
+ },
+ "gpv": {
+  "status": 404,
+  "len": 282,
+  "headers": {}
+ }
+}
