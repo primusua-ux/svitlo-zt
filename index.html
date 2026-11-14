@@ -161,13 +161,15 @@ map.attributionControl.setPrefix(false);
 window.svitloMap=map;
 var dots=L.layerGroup().addTo(map), pin=null, lastResult=null, renderer=L.canvas({padding:.3});
 
+function ring(lat,lon,a){var r=[];for(var i=0;i<a.length;i+=2)r.push([lat+a[i]/1e6,lon+a[i+1]/1e6]);return r}
+function inRing(lat,lon,r){var c=false;for(var i=0,j=r.length-1;i<r.length;j=i++){var yi=r[i][0],xi=r[i][1],yj=r[j][0],xj=r[j][1];if((yi>lat)!==(yj>lat)&&lon<(xj-xi)*(lat-yi)/(yj-yi)+xi)c=!c}return c}
 function cellKey(lat,lon){return Math.floor(lat*10)+"_"+Math.floor(lon*10)}
 function loadCell(k){
   if(!CELLS||!CELLS[k]) return Promise.resolve(null);
   if(cellCache[k]) return cellCache[k];
   return cellCache[k]=fetch("data/pts/"+k+".json").then(function(r){return r.json()}).then(function(d){
     var la0=d.o[0], lo0=d.o[1];
-    d.pts=d.p.map(function(a){var n=d.n[d.s[a[2]][0]];return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, rem:n[0], sp:n[1], st:d.s[a[2]][1], h:a[3], codes:a[4].split("|")}});
+    d.pts=d.p.map(function(a){var n=d.n[d.s[a[2]][0]];return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, rem:n[0], sp:n[1], st:d.s[a[2]][1], h:a[3], codes:a[4].split("|"), poly:a[5]?ring((la0+a[0])/1e5,(lo0+a[1])/1e5,a[5]):null}});
     return d;
   }).catch(function(){cellCache[k]=null;return null});
 }
@@ -182,12 +184,14 @@ function redrawDots(){
   if(map.getZoom()<16||!CELLS) return;
   var b=map.getBounds().pad(.15), c=map.getCenter();
   cellsAround(c.lat,c.lng,Math.max(b.getNorth()-b.getSouth(),.002)/2).then(function(cells){
-    dots.clearLayers(); var n=0;
+    dots.clearLayers(); var n=0, drawn={};
     cells.forEach(function(cell){cell.pts.forEach(function(p){
       if(!p.h||n>4000||!b.contains([p.lat,p.lon])) return; n++;
       var st=stateNow(codeInfo(p.codes[0]).row);
-      L.circleMarker([p.lat,p.lon],{renderer:renderer,radius:map.getZoom()>=18?6:4,weight:1,color:"#fff",fillOpacity:.95,
-        fillColor:st==="off"?"#f0524f":st==="on"?"#35c26b":"#667",interactive:false}).addTo(dots);
+      var col=st==="off"?"#f0524f":st==="on"?"#35c26b":"#667";
+      if(p.poly){var pk=p.poly[0][0].toFixed(6)+p.poly[0][1].toFixed(6)+p.poly.length; if(drawn[pk]) return; drawn[pk]=1}
+      if(p.poly) L.polygon(p.poly,{renderer:renderer,weight:1,color:st==="off"?"#b3302e":st==="on"?"#1f8a48":"#445",fillColor:col,fillOpacity:.8,interactive:false}).addTo(dots);
+      else L.circleMarker([p.lat,p.lon],{renderer:renderer,radius:map.getZoom()>=18?6:4,weight:1,color:"#fff",fillOpacity:.95,fillColor:col,interactive:false}).addTo(dots);
     })});
   });
 }
@@ -200,6 +204,7 @@ function lookup(lat,lon){
   cellsAround(lat,lon,.0025).then(function(cells){
     var bh=null,dh=1e9,bs=null,ds=1e9;
     cells.forEach(function(c){c.pts.forEach(function(p){var d=distM(lat,lon,p.lat,p.lon);
+      if(p.poly&&d<300&&inRing(lat,lon,p.poly)) d=0;
       if(p.h){if(d<dh){dh=d;bh=p}}else if(d<ds){ds=d;bs=p}})});
     if(bh&&dh<=NEAR_M){ showResult({lat:bh.lat,lon:bh.lon,sp:bh.sp,st:bh.st,h:bh.h,codes:bh.codes}); return }
     if(bs&&ds<=STREET_M&&!(bh&&dh<ds)){

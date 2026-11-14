@@ -221,10 +221,12 @@ def take_house(la, lo, rem, sp, k, hk, hn, codes):
     seen.add(key); matched_houses.add((rem, sp, k, hk)); stats["matched"] += 1
     house_rows.append((la, lo, rem, sp, k, hk, hn.strip(), "|".join(collapse(codes))))
 
-pend_h = []
+pend_h = []; polyof = {}
 for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
-    la, lo, hn, st, pl, city, sub = ln.rstrip("\n").split("\t")
+    cols = ln.rstrip("\n").split("\t")
+    la, lo, hn, st, pl, city, sub = cols[:7]
     la = float(la); lo = float(lo); stats["osm"] += 1
+    if len(cols) > 7 and cols[7]: polyof[(la, lo, hn.strip())] = cols[7]
     st = st or pl
     if not st or not hn: stats["no_street"] += 1; continue
     sk = street_key(st); hk = house_key(hn); hit = None
@@ -314,12 +316,22 @@ for f in os.listdir(out): os.remove(f"{out}/{f}")
 keys = []
 for (cy, cx), pts in sorted(cells.items()):
     la0, lo0 = cy * 10000, cx * 10000
-    names, nidx, streets, sidx, P = [], {}, [], {}, []
+    names, nidx, streets, sidx, P = [], {}, [], {}, []; pdone = set()
+    haspoly = defaultdict(list)
+    for la, lo, rem, sp, st, hn, codes in pts:
+        if hn and polyof.get((la, lo, hn)): haspoly[(rem, sp, st, house_key(hn))].append((la, lo))
     for la, lo, rem, sp, st, hn, codes in sorted(pts):
+        if hn and not polyof.get((la, lo, hn)) and any(dist(la, lo, q[0], q[1]) < 0.06 for q in haspoly.get((rem, sp, st, house_key(hn)), ())):
+            continue                                   # цю адресу вже показано контуром будівлі
         if (rem, sp) not in nidx: nidx[(rem, sp)] = len(names); names.append([rem, sp])
         sk = (nidx[(rem, sp)], st)
         if sk not in sidx: sidx[sk] = len(streets); streets.append([nidx[(rem, sp)], st])
-        P.append([round(la * 1e5) - la0, round(lo * 1e5) - lo0, sidx[sk], hn, codes])
+        row = [round(la * 1e5) - la0, round(lo * 1e5) - lo0, sidx[sk], hn, codes]
+        poly = polyof.get((la, lo, hn)) if hn else None
+        if poly:
+            if (sk, hn, poly) in pdone: continue      # та сама будівля двічі (точка адреси і сама будівля)
+            pdone.add((sk, hn, poly)); row.append([int(x) for x in poly.split(",")]); stats["with_outline"] += 1
+        P.append(row)
     k = f"{cy}_{cx}"; keys.append(k)
     json.dump({"o": [la0, lo0], "n": names, "s": streets, "p": P}, open(f"{out}/{k}.json", "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
@@ -349,3 +361,5 @@ with open(f"{D}/coverage.csv", "w", newline="", encoding="utf-8-sig") as f:
     w = csv.writer(f); w.writerow(["РЕМ", "Населений пункт", "Будинків у базі", "З координатами", "%"])
     for k, t in sorted(tot.items(), key=lambda x: -x[1]):
         w.writerow([k[0], k[1], t, per[k], round(100 * per[k] / t, 1) if t else 0])
+
+print("будинків з контуром:", stats["with_outline"])
