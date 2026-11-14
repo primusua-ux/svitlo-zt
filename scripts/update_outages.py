@@ -2,7 +2,7 @@
 """Діючі та планові відключення з офіційного сервісу Житомиробленерго «Чому немає світла?» (PowerOn)
 + статус обласних аварійних відключень з офіційного Telegram-каналу. Пише компактний outages.json.
 Запуск: python3 scripts/update_outages.py data out/outages.json"""
-import html, json, re, sys, time, urllib.request
+import glob, html, json, re, sys, time, urllib.request
 from collections import defaultdict, Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -59,6 +59,26 @@ def find(rem, city, street):
     if len(alts) == 1: return sp, m[alts[0]][0], m[alts[0]][1]
     return None
 
+# ---------- координати для переліку аварій ----------
+hpt = {}; spt = {}; ppt = {}
+for f in glob.glob(f"{D}/pts/*_*.json"):
+    t = json.load(open(f, encoding="utf-8"))
+    for a in t["p"]:
+        n = t["n"][t["s"][a[2]][0]]; key = (n[0], n[1], t["s"][a[2]][1]); ll = [(t["o"][0] + a[0]) / 1e5, (t["o"][1] + a[1]) / 1e5]
+        if a[3]: hpt.setdefault(key, {})[house_key(a[3])] = ll
+        else: spt.setdefault(key, ll)
+try:
+    for q in json.load(open(f"{D}/pts/places.json", encoding="utf-8")): ppt[(q[3], q[4])] = [q[0], q[1]]
+except OSError: pass
+def locate(rem, sp, st, houses):
+    hs = hpt.get((rem, sp, st), {})
+    for h in houses:
+        if h in hs: return hs[h] + [2]          # точний будинок
+    if hs: return next(iter(hs.values())) + [1]
+    if (rem, sp, st) in spt: return spt[(rem, sp, st)] + [1]   # вулиця
+    if (rem, sp) in ppt: return ppt[(rem, sp)] + [0]           # населений пункт
+    return None
+
 # ---------- PowerOn ----------
 first = json.loads(get(API + "?page=1"))
 total = first["hydra:totalItems"]; per = max(1, len(first["hydra:member"])); pages = (total + per - 1) // per
@@ -67,7 +87,7 @@ rows = list(first["hydra:member"])
 with ThreadPoolExecutor(6) as ex:
     for part in ex.map(page, range(2, pages + 1)): rows += part
 
-now = int(time.time()); stats = Counter(); acc = defaultdict(list); qoff = defaultdict(set); seen = set()
+now = int(time.time()); stats = Counter(); acc = defaultdict(list); raw = []; qoff = defaultdict(set); seen = set()
 for r in rows:
     if r.get("id") in seen: continue
     seen.add(r.get("id"))
@@ -79,7 +99,11 @@ for r in rows:
     stats[kind] += 1
     hit = find(rem, city, street)
     houses = [house_key(h) for h in (r.get("buildingNames") or "").split(",") if h.strip()]
-    if not hit: stats[kind + "_unmatched"] += 1; continue
+    if not hit:
+        stats[kind + "_unmatched"] += 1
+        if kind != "gpv" and not (kind == "plan" and t1 and t1 < now - 6 * 3600):
+            raw.append([0 if kind == "acc" else 1, t0, t1, kom[:80], (r.get("buildingNames") or "")[:200], rem, city, street])
+        continue
     sp, st, hs = hit
     if kind == "gpv":
         if t0 <= now and not (t1 and t1 < now - 600):      # лише ті, що тривають зараз
@@ -87,7 +111,7 @@ for r in rows:
                 for q in {c.rstrip("ю") for c in hs.get(h, ())}: qoff[q].add((rem, sp, st, h))
         continue
     if t1 and t1 < now - 6 * 3600 and kind == "plan": continue           # давно завершені планові
-    acc[f"{rem}|{sp}|{st}"].append([0 if kind == "acc" else 1, t0, t1, kom[:80], ",".join(sorted(set(houses)))])
+    acc[f"{rem}|{sp}|{st}"].append([0 if kind == "acc" else 1, t0, t1, kom[:80], ",".join(sorted(set(houses))), locate(rem, sp, st, houses)])
 
 live = {q: round(len(qoff[q]) / qtotal[q], 3) for q in sorted(qtotal) if qtotal[q]}
 
@@ -110,6 +134,6 @@ try:
 except Exception as e:
     gav["error"] = str(e)[:120]
 
-out = {"updated": now, "total": len(seen), "acc": acc, "live": live, "gav": gav}
+out = {"updated": now, "total": len(seen), "acc": acc, "raw": raw, "live": live, "gav": gav}
 json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(dict(stats)); print("вулиць з аваріями/ремонтами:", len(acc)); print("live:", live); print("gav:", gav)
