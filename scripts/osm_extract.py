@@ -2,9 +2,30 @@
 """GeoJSONSeq (результат osmium export) -> data/osm/addr.tsv.gz, places.tsv.gz, streets.tsv.gz.
 Для кожної адреси додається контур будівлі (якщо адреса стоїть на будівлі або точка лежить усередині неї).
 Дані © учасники OpenStreetMap, ліцензія ODbL."""
-import gzip, json, math, os, sys
+import gzip, json, math, os, re, sys
 from collections import defaultdict
 src, out = sys.argv[1], sys.argv[2]
+REL = sys.argv[3] if len(sys.argv) > 3 else None
+
+# зв'язки «будинок -> вулиця» з відношень associatedStreet (OPL: r1 v1 ... T type=associatedStreet,name=... Mw1@house,n2@house)
+def opl_unescape(v):
+    return re.sub(r"%([0-9a-fA-F]+)%", lambda m: chr(int(m.group(1), 16)), v)
+house_street = {}
+if REL and os.path.exists(REL):
+    for ln in open(REL, encoding="utf-8"):
+        parts = ln.split(" "); tags = {}; mem = []
+        for x in parts:
+            if x.startswith("T"):
+                for kv in x[1:].split(","):
+                    if "=" in kv: k, v = kv.split("=", 1); tags[opl_unescape(k)] = opl_unescape(v)
+            elif x.startswith("M"):
+                mem = [m for m in x[1:].strip().split(",") if m]
+        name = tags.get("name:uk") or tags.get("name")
+        if not name: continue
+        for m in mem:
+            ref, _, role = m.partition("@")
+            if role in ("house", "address", "") and ref[:1] in "nwr": house_street[ref] = name
+    print("зв'язків будинок-вулиця з відношень:", len(house_street))
 os.makedirs(out, exist_ok=True)
 PLACES = {"city", "town", "village", "hamlet", "suburb", "neighbourhood", "allotments"}
 G = 0.002  # крок сітки для пошуку будівлі за точкою
@@ -90,7 +111,7 @@ def near_streets(la, lo, rmax=80):
                 if d < best.get(sg[4], 1e9): best[sg[4]] = d
     return [k for k, d in sorted(best.items(), key=lambda x: x[1]) if d <= rmax][:3]
 
-na = np_ = ns = npoly = nnear = 0; used = set()
+na = np_ = ns = npoly = nnear = nrel = 0; used = set()
 with gzip.open(f"{out}/addr.tsv.gz", "wt", encoding="utf-8") as fa, \
      gzip.open(f"{out}/places.tsv.gz", "wt", encoding="utf-8") as fp, \
      gzip.open(f"{out}/streets.tsv.gz", "wt", encoding="utf-8") as fs:
@@ -108,6 +129,9 @@ with gzip.open(f"{out}/addr.tsv.gz", "wt", encoding="utf-8") as fa, \
             poly = encode(ring, lat, lon) if ring else ""
             npoly += bool(poly)
             near = ""
+            fid = str(f.get("id") or t.get("@id") or "")
+            if not t.get("addr:street") and not t.get("addr:place") and fid in house_street:
+                t["addr:street"] = house_street[fid]; nrel += 1
             if not t.get("addr:street") and not t.get("addr:place"):
                 near = "|".join(near_streets(lat, lon)); nnear += bool(near)
             fa.write("\t".join([f"{lat:.6f}", f"{lon:.6f}", clean(t.get("addr:housenumber")), clean(t.get("addr:street")),
@@ -118,6 +142,6 @@ with gzip.open(f"{out}/addr.tsv.gz", "wt", encoding="utf-8") as fa, \
         if g["type"] == "LineString" and t.get("highway") and (t.get("name:uk") or t.get("name")):
             fs.write("\t".join([f"{lat:.6f}", f"{lon:.6f}", clean(t.get("name:uk") or t.get("name")),
                                 clean(t.get("old_name:uk") or t.get("old_name"))]) + "\n"); ns += 1
-print("адрес без вулиці, для яких знайдено найближчі вулиці:", nnear)
+print("адрес без вулиці: взято з відношень", nrel, "; найближчі вулиці для", nnear)
 print("адрес:", na, "з контуром будівлі:", npoly, "населених пунктів:", np_, "відрізків вулиць:", ns)
 

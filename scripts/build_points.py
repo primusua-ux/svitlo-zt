@@ -194,12 +194,15 @@ for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
     cands = candidates(la, lo, city)
     if not st:
         # адреса без назви вулиці: беремо найближчі вулиці, але лише якщо номер будинку є рівно на одній з них
+        # найближча вулиця з таким номером приймається, якщо вона перша в списку; інакше лише за однозначності
         hits = []
-        for nm in near:
+        for i, nm in enumerate(near):
             sk1 = street_key(nm)
             for rem, sp in cands:
                 m = zt[(rem, sp)]; k = find_street(m, sk1, la, lo)
-                if k is not None and hk in m[k]: hits.append((rem, sp, k, m[k][hk])); break
+                if k is not None and hk in m[k]: hits.append((i, (rem, sp, k, m[k][hk]))); break
+        if hits and hits[0][0] == 0: hits = [hits[0][1]]
+        else: hits = [h[1] for h in hits]
         if len({h[:3] for h in hits}) == 1:
             take_house(la, lo, hits[0][0], hits[0][1], hits[0][2], hk, hn, hits[0][3]); stats["inferred_street"] += 1
         else: stats["no_street"] += 1
