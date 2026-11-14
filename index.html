@@ -351,6 +351,26 @@ function showStreet(lat,lon,p){
     $("shList").onclick=function(e){var h=e.target.dataset&&e.target.dataset.h;if(h) showResult({lat:lat,lon:lon,rem:p.rem,sp:p.sp,st:p.st,h:h,codes:dedupe(m[h])})};
   });
 }
+// перехід на карті до знайденої адреси: будинок, інакше вулиця, інакше населений пункт
+var geoCache={};
+function goToAddress(r){
+  loadRem0().then(function(ix){
+    var f=ix[r.rem].file.replace("rem/","geo/");
+    return geoCache[f]||(geoCache[f]=fetch("data/"+f).then(function(x){return x.ok?x.json():{}}).catch(function(){return {}}));
+  }).then(function(g){
+    if(lastResult!==r) return;
+    var st=(g[r.sp]||{})[r.st]||{}, pt=st[hk(r.h)], zoom=18, note="";
+    if(!pt){ pt=st[""]; if(!pt){var ks=Object.keys(st); if(ks.length) pt=st[ks[0]]} zoom=17; if(pt) note="Будинку немає на карті, показано вулицю" }
+    if(!pt){ for(var i=0;i<PLACES.length;i++) if(PLACES[i][3]===r.rem&&PLACES[i][4]===r.sp){pt=[PLACES[i][0],PLACES[i][1]];break} zoom=15; if(pt) note="Вулиці немає на карті, показано населений пункт" }
+    if(!pt){ r.note="Цієї адреси немає на карті, показано лише дані з бази"; showResult(r); return }
+    r.lat=pt[0]; r.lon=pt[1]; if(note) r.note=note;
+    showResult(r);
+    // центруємо так, щоб точка була над карткою
+    map.setView(pt,zoom,{animate:false});
+    var off=Math.min($("sheet").offsetHeight,innerHeight*.78)/2;
+    map.panBy([0,off],{animate:false});
+  });
+}
 function dedupe(codes){var plain={};codes.forEach(function(c){if(!/ю$/.test(c))plain[c]=1});return codes.filter(function(c){return !(/ю$/.test(c)&&plain[c.slice(0,-1)])})}
 function loadRem(k){
   var idx=remIndex?Promise.resolve(remIndex):fetch("data/index.json").then(function(r){return r.json()}).then(function(d){return remIndex=d});
@@ -525,7 +545,8 @@ $("hList").onclick=function(e){
   var codes=housesOf()[h]; $("search").classList.remove("open");
   var r={lat:null,lon:null,rem:$("selRem").value,sp:curSp,st:curSt,h:h,codes:dedupe(codes)};
   if(pin){map.removeLayer(pin);pin=null}
-  showResult(r);
+  $("hint").style.opacity=0;
+  showResult(r); goToAddress(r);
 };
 
 /* ---------- старт ---------- */

@@ -296,6 +296,17 @@ for (cy, cx), pts in sorted(cells.items()):
     json.dump({"o": [la0, lo0], "n": names, "s": streets, "p": P}, open(f"{out}/{k}.json", "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
 json.dump(keys, open(f"{out}/index.json", "w"), separators=(",", ":"))
+
+# індекс координат для пошуку за адресою: data/geo/<n>.json = {нас. пункт: {вулиця: {будинок або "": [lat, lon]}}}
+geo = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+for pts in cells.values():
+    for la, lo, rem, sp, st, hn, codes in pts:
+        d = geo[rem][sp][st]; k = house_key(hn) if hn else ""
+        if k not in d or (hn and polyof.get((la, lo, hn))): d[k] = [round(la, 5), round(lo, 5)]
+os.makedirs(f"{D}/geo", exist_ok=True)
+for rem, info in index.items():
+    n = info["file"].split("/")[-1]
+    json.dump(geo.get(rem, {}), open(f"{D}/geo/{n}", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 json.dump(plist, open(f"{out}/places.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 
 tot_streets = sum(len(m) for m in zt.values())
