@@ -6,6 +6,20 @@
 <meta name="theme-color" content="#14181f">
 <title>Світло є? Карта відключень Житомирщини</title>
 <meta name="description" content="Торкніться будинку на карті, щоб дізнатися, чи є світло: графік відключень, аварії та планові роботи Житомиробленерго по всій області.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Світло є? Карта відключень Житомирщини">
+<meta property="og:description" content="Торкніться свого будинку: чи є світло зараз, коли вимкнуть і коли увімкнуть. Графік, аварії та планові роботи по всій області.">
+<meta property="og:image" content="https://primusua-ux.github.io/svitlo-zt/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:url" content="https://primusua-ux.github.io/svitlo-zt/">
+<meta property="og:locale" content="uk_UA">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Світло є?">
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <style>
 :root{
@@ -129,6 +143,56 @@ a{color:var(--accent)}
 .alert.facton{background:rgba(53,194,107,.14);border-color:var(--on)}
 .gav{position:fixed;left:10px;right:68px;top:calc(66px + var(--safe-t));z-index:490;background:#7a1f1d;color:#fff;border-radius:12px;padding:8px 12px;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.35);display:none}
 .gav a{color:#ffd9a8}
+
+/* світла тема */
+:root[data-theme=light]{--bg:#f2f4f7;--panel:#ffffff;--panel2:#e8ecf1;--line:#d3d9e1;--text:#14181f;--muted:#5a6676;--accent:#b7860b;--glass:rgba(255,255,255,.92)}
+:root{--glass:rgba(20,24,31,.9)}
+.hint,.ps{background:var(--glass)}
+:root[data-theme=light] .iconbtn,:root[data-theme=light] .brand{box-shadow:0 2px 10px rgba(0,0,0,.18)}
+:root[data-theme=light] .strip .past{opacity:.45}
+:root[data-theme=light] .nowm{background:#14181f;box-shadow:0 0 0 1px #fff}
+.iconbtn.on{background:var(--accent);color:#14181f}
+.cd{font-weight:700;color:var(--text)}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.actions button{flex:1 1 0;min-width:0;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap}
+.actions button svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.actions button.saved{border-color:var(--accent);color:var(--accent)}
+.actions button.saved svg{fill:var(--accent)}
+.actions .small{flex:1 0 100%;height:32px;border:0;background:none;color:var(--muted);font-size:13px;text-decoration:underline}
+.tag.q{cursor:pointer;border:1px solid var(--line)}
+.day{margin-top:14px;font-size:13px;color:var(--muted);font-weight:600}
+.hist{margin-top:10px;font-size:14px;color:var(--muted)}
+.hist b{color:var(--text)}
+.toast{position:fixed;left:50%;bottom:calc(90px + var(--safe-b));transform:translateX(-50%);z-index:900;background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+.mapbar{position:fixed;left:10px;right:68px;bottom:calc(10px + var(--safe-b));z-index:520;background:var(--panel);border-radius:14px;padding:10px 12px;box-shadow:0 2px 12px rgba(0,0,0,.35);display:none}
+.mapbar.open{display:block}
+.mapbar .tl{display:flex;align-items:center;gap:8px;font-size:14px}
+.mapbar .tl b{flex:1}
+.mapbar .tl button{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:13px;padding:0 10px}
+.mapbar input[type=range]{width:100%;margin:8px 0 2px;accent-color:var(--accent)}
+.qleg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;margin-top:2px}
+.qleg span{display:flex;align-items:center;gap:4px}
+.qleg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.home{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:10px 12px;margin-bottom:8px}
+.home .hd{width:14px;height:14px;border-radius:50%;flex:none;background:#667}
+.home .hd.on{background:var(--on)} .home .hd.off{background:var(--off)} .home .hd.acc{background:var(--acc)} .home .hd.plan{background:var(--plan)}
+.home div{flex:1;min-width:0;cursor:pointer}
+.home b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home small{color:var(--muted);font-size:13px}
+.home button{border:0;background:none;color:var(--muted);font-size:22px;width:36px;height:36px;cursor:pointer}
+.bars{display:flex;align-items:flex-end;gap:3px;height:90px;margin:10px 0 2px}
+.bars div{flex:1;background:var(--off);border-radius:3px 3px 0 0;min-height:2px;position:relative}
+.bars div.today{opacity:.55}
+.bars div.none{background:var(--line)}
+.blab{display:flex;gap:3px;font-size:10px;color:var(--muted)}
+.blab span{flex:1;text-align:center}
+.seg{display:flex;gap:6px;margin:8px 0}
+.seg button{flex:1;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:14px}
+.seg button.on{background:var(--panel2);color:var(--text);border-color:var(--muted);font-weight:600}
+.panel textarea{width:100%;min-height:90px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:15px/1.4 inherit;padding:10px 12px;flex:none}
+.btnp{display:block;width:100%;height:48px;border-radius:12px;border:0;background:var(--accent);color:#14181f;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer;flex:none}
+.empty{color:var(--muted);font-size:14px}
 </style>
 <script defer src="https://cloud.umami.is/script.js" data-website-id="e90a0de3-497f-455a-ae67-4159b55d6c29"></script>
 </head>
@@ -142,10 +206,25 @@ a{color:var(--accent)}
 <button class="iconbtn" id="locate" aria-label="Моє місцезнаходження"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></button>
 <div class="side" id="side">
   <button class="iconbtn acc" id="btnAcc" aria-label="Де аварії"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17v.5"/></svg><span class="badge" id="accBadge"></span></button>
+  <button class="iconbtn" id="btnHome" aria-label="Мої адреси"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></button>
+  <button class="iconbtn" id="btnQueues" aria-label="Підчерги на карті"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/></svg></button>
+  <button class="iconbtn" id="btnTime" aria-label="Карта на інший час"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
   <button class="iconbtn" id="btnHelp" aria-label="Допомога"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.5"/></svg></button>
 </div>
 <button class="ps" id="psLogo" aria-label="PrimusSoft"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="#f6c343"/><path d="M8 18V6h5.2a3.6 3.6 0 0 1 0 7.2H8" fill="none" stroke="#14181f" stroke-width="2.4" stroke-linejoin="round"/></svg><span>Primus<i>Soft</i></span></button>
 <div class="gav" id="gav"></div>
+<div class="mapbar" id="mapbar">
+  <div id="timeBox" hidden>
+    <div class="tl"><b id="timeLbl">Карта на 12:00</b><button id="timeNow">Зараз</button><button id="timeClose" aria-label="Закрити">×</button></div>
+    <input type="range" id="timeR" min="0" max="47" step="1" value="24" aria-label="Час">
+    <div class="blab" id="timeTicks"></div>
+  </div>
+  <div id="qBox" hidden>
+    <div class="tl"><b>Підчерги на карті</b><button id="qClose" aria-label="Закрити">×</button></div>
+    <div class="qleg" id="qLeg"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
 <div class="hint" id="hint">Торкніться будинку чи вулиці на карті</div>
 
 <div class="sheet" id="sheet" role="dialog" aria-live="polite">
@@ -177,6 +256,29 @@ a{color:var(--accent)}
   <div id="accList"></div>
 </div>
 
+<div class="panel" id="homesP">
+  <button class="close" data-close="homesP" aria-label="Закрити">×</button>
+  <h3>Мої адреси</h3>
+  <div id="homesList"></div>
+  <p class="empty">Щоб додати адресу, торкніться будинку на карті або знайдіть його через пошук і натисніть «Зберегти». Перша адреса відкриватиметься одразу, коли ви заходите на сайт.</p>
+</div>
+
+<div class="panel" id="queueP">
+  <button class="close" data-close="queueP" aria-label="Закрити">×</button>
+  <h3 id="qTitle">Підчерга</h3>
+  <div id="qBody"></div>
+</div>
+
+<div class="panel" id="reportP">
+  <button class="close" data-close="reportP" aria-label="Закрити">×</button>
+  <h3>Повідомити про помилку</h3>
+  <p class="empty" id="repAddr"></p>
+  <label for="repText">Що не так?</label>
+  <textarea id="repText" placeholder="Наприклад: у мене підчерга 4.1, а сайт показує 3.2. Або: будинок не той."></textarea>
+  <button class="btnp" id="repSend">Надіслати</button>
+  <p class="empty">Відкриється сторінка для відправлення повідомлення розробнику з уже заповненою адресою. Ваші контакти без вашої згоди не передаються.</p>
+</div>
+
 <div class="panel about" id="about">
   <button class="close" data-close="about" aria-label="Закрити">×</button>
   <h3>Допомога</h3>
@@ -187,6 +289,10 @@ a{color:var(--accent)}
     <li>Кнопка з лупою: пошук за адресою, якщо будинку немає на карті.</li>
     <li>Кнопка з трикутником: перелік адрес з аварійними відключеннями. Торкніться адреси, щоб перейти до неї на карті.</li>
     <li>Кнопка з прицілом унизу: показати стан світла там, де ви зараз.</li>
+    <li>Кнопка з будиночком: ваші збережені адреси. Зберегти адресу можна в картці кнопкою «Зберегти».</li>
+    <li>Кнопка з шарами: розфарбувати карту за номерами підчерг.</li>
+    <li>Кнопка з годинником: подивитися, де буде світло в інший час сьогодні чи завтра.</li>
+    <li>Кнопка «Поділитися» в картці надсилає посилання, яке відкриває саме цю адресу.</li>
   </ol>
   <h4>Кольори на карті</h4>
   <ul class="legend">
@@ -204,6 +310,10 @@ a{color:var(--accent)}
   <p>Смуга показує добу з 00:00 до 24:00: червоні відрізки це відключення за графіком, біла риска це поточний час.</p>
   <h4>Поточний графік</h4>
   <div id="aboutBody"></div>
+  <h4>Тема</h4>
+  <div class="seg" id="themeSeg"><button data-t="auto">Як у системі</button><button data-t="dark">Темна</button><button data-t="light">Світла</button></div>
+  <h4>Встановити на телефон</h4>
+  <p>Сайт можна додати на головний екран як застосунок: в Android меню браузера → «Додати на головний екран» або «Встановити», на iPhone кнопка «Поділитися» → «На екран Початок». Останній завантажений графік тоді відкривається і без інтернету.</p>
   <h4>Звідки дані і наскільки вони точні</h4>
   <p>Графік і черги: <a href="https://www.ztoe.com.ua/unhooking-search.php" target="_blank" rel="noopener">АТ «Житомиробленерго»</a>. Аварії, ремонти і фактичний стан черг: сервіс обленерго <a href="https://ztoe-poweron.inneti.net/" target="_blank" rel="noopener">«Чому немає світла?»</a>. Дані оновлюються кожні 15 хвилин, а після перемикання черг можуть запізнюватися до пів години.</p>
   <p>Графік діє, коли «Укренерго» застосовує обмеження. Під час обласних аварійних відключень графік не застосовується, про це попередить червоний банер угорі.</p>
@@ -220,7 +330,8 @@ var $=function(id){return document.getElementById(id)};
 var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
 var SCHED=null, CELLS=null, cellCache={}, remIndex=null, remCache={};
 var LIVE="https://raw.githubusercontent.com/primusua-ux/svitlo-zt/live/", OUT=null, OUTIDX={};
-var NEAR_M=45, STREET_M=75, FAR_M=150, PLACES=[];
+var NEAR_M=45, STREET_M=75, FAR_M=150, PLACES=[], TS=10, HIST=null;
+var VIEW={queues:false, slot:null, day:0};   // режими карти: підчерги; інший час (slot 0..47, day 0 сьогодні, 1 завтра)
 
 /* ---------- час у Києві ---------- */
 function kyivNow(){
@@ -230,18 +341,27 @@ function kyivNow(){
 }
 function hm(slot){var m=slot*30;return ("0"+Math.floor(m/60)).slice(-2)+":"+("0"+m%60).slice(-2)}
 function schedFresh(){return SCHED && SCHED.date===kyivNow().date}
+function addDay(d,n){var t=new Date(d+"T12:00:00Z");t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)}
+function dmy(d){return d.split("-").reverse().slice(0,2).join(".")}
+// графік підчерги на день: 0 сьогодні, 1 завтра (null, якщо не опубліковано)
+function gridDay(q,day){
+  if(!SCHED) return null; if(q==="0") return new Array(49).join("0");
+  var d=addDay(kyivNow().date,day);
+  if(SCHED.days&&SCHED.days[d]) return SCHED.days[d][q]||null;
+  return day===0&&schedFresh()&&SCHED.grid?SCHED.grid[q]:null;
+}
+function hasTomorrow(){return !!(SCHED&&SCHED.days&&SCHED.days[addDay(kyivNow().date,1)])}
+function dur(min){var h=Math.floor(min/60),m=min%60;return (h?h+" год":"")+(h&&m?" ":"")+(m||!h?m+" хв":"")}
 
 /* ---------- графік ---------- */
 function loadSchedule(){
   var t="?t="+Math.floor(Date.now()/60000);
   return fetch(LIVE+"schedule.json"+t,{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.json()})
     .catch(function(){return fetch("data/schedule.json"+t,{cache:"no-store"}).then(function(r){return r.json()})}).then(function(d){
-    SCHED=d; var sub=$("sub"), d2=d.date.split("-").reverse().join(".");
-    if(schedFresh()){sub.className="";sub.textContent="Графік на "+d2+(d.source_updated?" · оновлено "+d.source_updated.split(" ")[1]:"")}
-    else{sub.className="warn";sub.textContent="Графік на сьогодні ще не опубліковано (є на "+d2+")"}
+    SCHED=d; updSub(); if(curQ&&$("queueP").classList.contains("open")) openQueue(curQ,true);
     $("aboutBody").innerHTML=(d.notice?"<pre>"+esc(d.notice)+"</pre>":"")+"<p>Дата графіка: "+d2+". Оновлення на сайті обленерго: "+esc(d.source_updated||"невідомо")+".</p>";
-    redrawDots(); if(lastResult) showResult(lastResult);
-  }).catch(function(){ $("sub").className="warn"; $("sub").textContent="Не вдалося завантажити графік" });
+    redrawDots(); if(lastResult) showResult(lastResult,true);
+  }).catch(function(e){ if(e) console.warn("графік:",e); if(!SCHED){ $("sub").className="warn"; $("sub").textContent="Не вдалося завантажити графік, пробую ще раз…" } clearTimeout(loadSchedule.t); loadSchedule.t=setTimeout(loadSchedule,15000) });
 }
 /* ---------- діючі відключення (аварії, ремонти, фактичний стан черг) ---------- */
 function hk(h){return String(h).toUpperCase().replace(/[\s]/g,"").replace(/^(\d+)-([А-ЯІЇЄҐA-Z])$/,"$1$2")}
@@ -253,8 +373,24 @@ function loadOutages(){
     if(gv.active){g.style.display="block";g.innerHTML="Діють аварійні відключення за командою «Укренерго». Графік погодинних відключень зараз може не застосовуватися. "+(gv.url?'<a href="'+esc(gv.url)+'" target="_blank" rel="noopener">Повідомлення обленерго</a>':"")}
     else g.style.display="none";
     $("side").className="side"+(gv.active?" low":"");
-    updateBadge(); redrawDots(); if(lastResult) showResult(lastResult);
+    updateBadge(); updSub(); redrawDots(); if(lastResult) showResult(lastResult,true);
   }).catch(function(){});
+}
+function updSub(){
+  var sub=$("sub"); if(!SCHED) return; var d2=dmy(SCHED.date), txt, warn=false, now=Date.now()/1000;
+  if(schedFresh()) txt="Графік на "+d2+(hasTomorrow()?" і завтра":"");
+  else{ txt="Графік на сьогодні ще не опубліковано (є на "+d2+")"; warn=true }
+  if(OUT&&OUT.updated){
+    var ago=Math.max(0,Math.round((now-OUT.updated)/60));
+    if(ago>60){ txt="Дані не оновлювались "+dur(ago)+", можливі неточності"; warn=true }
+    else txt+=" · перевірено "+(ago<2?"щойно":dur(ago)+" тому");
+  }
+  if(!navigator.onLine){ txt="Немає зв'язку, показано збережені дані"; warn=true }
+  sub.className=warn?"warn":""; sub.textContent=txt;
+}
+addEventListener("online",updSub); addEventListener("offline",updSub);
+function loadHistory(){
+  return fetch(LIVE+"history.json?t="+Math.floor(Date.now()/600000)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){HIST=d; if(lastResult) showResult(lastResult,true); if(curQ&&$("queueP").classList.contains("open")) openQueue(curQ,true)}).catch(function(){});
 }
 function outFresh(){return OUT&&Date.now()/1000-OUT.updated<45*60}
 // події для адреси: активні зараз і майбутні
@@ -299,13 +435,14 @@ var dots=L.layerGroup().addTo(map), pin=null, lastResult=null, renderer=L.canvas
 
 function ring(lat,lon,a){var r=[];for(var i=0;i<a.length;i+=2)r.push([lat+a[i]/1e6,lon+a[i+1]/1e6]);return r}
 function inRing(lat,lon,r){var c=false;for(var i=0,j=r.length-1;i<r.length;j=i++){var yi=r[i][0],xi=r[i][1],yj=r[j][0],xj=r[j][1];if((yi>lat)!==(yj>lat)&&lon<(xj-xi)*(lat-yi)/(yj-yi)+xi)c=!c}return c}
-function cellKey(lat,lon){return Math.floor(lat*10)+"_"+Math.floor(lon*10)}
+function cellKey(lat,lon){return Math.floor(lat*TS)+"_"+Math.floor(lon*TS)}
+function ring2(lat,lon,a){var r=[],y=Math.round(lat*1e5),x=Math.round(lon*1e5);for(var i=0;i<a.length;i+=2){y+=a[i];x+=a[i+1];r.push([y/1e5,x/1e5])}return r}
 function loadCell(k){
   if(!CELLS||!CELLS[k]) return Promise.resolve(null);
   if(cellCache[k]) return cellCache[k];
   return cellCache[k]=fetch("data/pts/"+k+".json").then(function(r){return r.json()}).then(function(d){
     var la0=d.o[0], lo0=d.o[1];
-    d.pts=d.p.map(function(a){var n=d.n[d.s[a[2]][0]];return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, rem:n[0], sp:n[1], st:d.s[a[2]][1], h:a[3], codes:orderCodes(a[4].split("|")), poly:a[5]?ring((la0+a[0])/1e5,(lo0+a[1])/1e5,a[5]):null, inf:a[6]?1:0}});
+    d.pts=d.p.map(function(a){var n=d.n[d.s[a[2]][0]];return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, rem:n[0], sp:n[1], st:d.s[a[2]][1], h:a[3], codes:orderCodes(a[4].split("|")), poly:a[5]?(d.v===2?ring2:ring)((la0+a[0])/1e5,(lo0+a[1])/1e5,a[5]):null, inf:a[6]?1:0}});
     return d;
   }).catch(function(){cellCache[k]=null;return null});
 }
@@ -323,12 +460,17 @@ function redrawDots(){
     dots.clearLayers(); var n=0, drawn={};
     cells.forEach(function(cell){cell.pts.forEach(function(p){
       if((!p.h&&!p.poly)||n>7000||!b.contains([p.lat,p.lon])) return; n++;
-      var st=stateNow(codeInfo(p.codes[0]).row), ae=activeEvent(p.rem,p.sp,p.st,p.h);
-      var lv=liveState(codeInfo(p.codes[0]).q); if(lv&&st) st=lv;
-      if(ae) st=ae.kind;
-      var col=st==="off"?"#f0524f":st==="on"?"#35c26b":st==="acc"?"#f59e0b":st==="plan"?"#7c8aff":"#667";
+      var q0=codeInfo(p.codes[0]).q, st, col;
+      if(VIEW.queues){ col=QCOL[q0]||"#667"; st="q" }
+      else if(VIEW.slot!=null){ var g=gridDay(q0,VIEW.day); st=g?(g.charAt(VIEW.slot)==="1"?"off":"on"):null }
+      else{
+        st=stateNow(codeInfo(p.codes[0]).row); var ae=activeEvent(p.rem,p.sp,p.st,p.h);
+        var lv=liveState(q0); if(lv&&st) st=lv;
+        if(ae) st=ae.kind;
+      }
+      if(!col) col=st==="off"?"#f0524f":st==="on"?"#35c26b":st==="acc"?"#f59e0b":st==="plan"?"#7c8aff":"#667";
       if(p.poly){var pk=p.poly[0][0].toFixed(6)+p.poly[0][1].toFixed(6)+p.poly.length; if(drawn[pk]) return; drawn[pk]=1}
-      if(p.poly) L.polygon(p.poly,{renderer:renderer,weight:1,color:st==="off"?"#b3302e":st==="on"?"#1f8a48":st==="acc"?"#b06f05":st==="plan"?"#4a57c9":"#445",fillColor:col,fillOpacity:p.inf?.55:.8,interactive:false}).addTo(dots);
+      if(p.poly) L.polygon(p.poly,{renderer:renderer,weight:1,color:st==="q"?"rgba(0,0,0,.45)":st==="off"?"#b3302e":st==="on"?"#1f8a48":st==="acc"?"#b06f05":st==="plan"?"#4a57c9":"#445",fillColor:col,fillOpacity:p.inf?.55:.8,interactive:false}).addTo(dots);
       else L.circleMarker([p.lat,p.lon],{renderer:renderer,radius:map.getZoom()>=18?6:4,weight:1,color:"#fff",opacity:p.inf?.6:1,fillOpacity:p.inf?.6:.95,fillColor:col,interactive:false}).addTo(dots);
     })});
   });
@@ -412,8 +554,13 @@ function setPin(lat,lon,cls){
   if(pin) map.removeLayer(pin);
   pin=L.marker([lat,lon],{icon:L.divIcon({className:"",html:'<div class="pin '+cls+'"></div>',iconSize:[22,22],iconAnchor:[11,11]}),interactive:false}).addTo(map);
 }
-function openSheet(html){ $("sheetBody").innerHTML=html; $("sheet").classList.add("open"); $("locate").style.transform="translateY(-"+Math.min($("sheet").offsetHeight,innerHeight*.78)+"px)" }
-function closeSheet(){ $("sheet").classList.remove("open"); $("locate").style.transform=""; lastResult=null; if(pin){map.removeLayer(pin);pin=null} }
+function openSheet(html){
+  $("sheetBody").innerHTML=html; $("sheet").classList.add("open");
+  var h=Math.min($("sheet").offsetHeight,innerHeight*.78), sb=$("side").getBoundingClientRect().bottom, L=$("locate");
+  L.style.transform="translateY(-"+h+"px)";
+  L.style.visibility=innerHeight-h-24-48<sb+8?"hidden":"";   // немає місця між карткою і бічними кнопками
+}
+function closeSheet(){ $("sheet").classList.remove("open"); $("locate").style.transform=""; $("locate").style.visibility=""; lastResult=null; if(pin){map.removeLayer(pin);pin=null} }
 $("sheetClose").onclick=closeSheet;
 
 function showMessage(lat,lon,msg){
@@ -425,7 +572,7 @@ var ICON_ON='<svg viewBox="0 0 24 24"><path d="M9 21h6v-1H9zm3-19a7 7 0 0 0-4 12
 var ICON_OFF='<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
 function entryHtml(code,multi){
   var ci=codeInfo(code), row=ci.row, fresh=schedFresh();
-  var head=(ci.nosched?'<span class="tag">Не вимикається за графіком</span>':'<span class="tag">Підчерга '+esc(ci.q)+'</span>')+(multi||ci.legal?'<span class="tag">'+(ci.legal?"нежитлові приміщення":"житлові (побутові)")+'</span>':"");
+  var head=(ci.nosched?'<span class="tag">Не вимикається за графіком</span>':'<span class="tag q" data-q="'+esc(ci.q)+'">Підчерга '+esc(ci.q)+' ›</span>')+(multi||ci.legal?'<span class="tag">'+(ci.legal?"нежитлові приміщення":"житлові (побутові)")+'</span>':"");
   if(!row) return '<div class="entry"><div class="status unk"><div class="dot">'+ICON_OFF+'</div><div><h2>Графік недоступний</h2><p>'+head+'</p></div></div></div>';
   var now=kyivNow(), slot=Math.min(47,Math.floor(now.min/30)), cur=row.charAt(slot), j=slot;
   while(j<48&&row.charAt(j)===cur) j++;
@@ -442,30 +589,55 @@ function entryHtml(code,multi){
     return '<div class="entry"><div class="status on"><div class="dot">'+ICON_ON+'</div><div><h2>Світло є</h2><p>Ця адреса не вимикається за графіком погодинних відключень, лише під час аварій</p></div></div>'+
       '<div style="margin-top:8px">'+head+'</div></div>';
   }
-  // смуга: червоні відрізки з тривалістю всередині, час над ними, минуле приглушене
-  var iv=intervals(row), cells="", labs="", rows=[-9,-9], LW=Math.min(40,82/Math.max(200,document.documentElement.clientWidth-32)*100), nowPct=now.min/1440*100;
+  var today=kyivNow().date, tom=gridDay(ci.q,1), cdTxt="";
+  if(fresh){
+    var mins=j*30-now.min;
+    if(j>=48&&tom){ var c2=tom.charAt(0), k=0; if(c2===cur){ while(k<48&&tom.charAt(k)===cur) k++; } mins=(48-slot)*30-(now.min-slot*30)+k*30;
+      if(k<48){ until=(cur==="1"?"Світло має з'явитися завтра о ":"Наступне відключення завтра о ")+hm(k) } else mins=0 }
+    if(mins>0) cdTxt=(cur==="1"?"увімкнуть через ":"вимкнуть через ")+dur(mins);
+  }
+  if(lv&&lv!==(cur==="1"?"off":"on")) cdTxt="";
+  return '<div class="entry"><div class="status '+st+'"><div class="dot">'+(st==="on"?ICON_ON:ICON_OFF)+'</div><div><h2>'+title+'</h2><p>'+esc(until)+(cdTxt?' · <span class="cd">'+cdTxt+'</span>':"")+'</p></div></div>'+
+    fact+'<div style="margin-top:8px">'+head+'</div>'+
+    (fresh?"":'<div class="day">Графік на '+dmy(SCHED.date)+'</div>')+stripHtml(row,fresh)+
+    (fresh&&tom?'<div class="day">Завтра, '+dmy(addDay(today,1))+'</div>'+stripHtml(tom,false):"")+
+    histHtml(ci.q)+'</div>';
+}
+// смуга доби: червоні відрізки з тривалістю всередині, час над ними, минуле приглушене
+function stripHtml(row,isToday){
+  var now=kyivNow(), iv=intervals(row), cells="", labs="", rows=[-9,-9], LW=Math.min(40,82/Math.max(200,document.documentElement.clientWidth-32)*100), nowPct=now.min/1440*100;
   iv.forEach(function(v){
-    var l=v[0]/48*100, w=(v[1]-v[0])/48*100, hrs=(v[1]-v[0])/2, dur=String(hrs).replace(".",",")+" год";
-    cells+='<i style="left:'+l.toFixed(3)+'%;width:'+w.toFixed(3)+'%">'+(w>=dur.length*1.9?dur:"")+'</i>';
+    var l=v[0]/48*100, w=(v[1]-v[0])/48*100, hrs=(v[1]-v[0])/2, du=String(hrs).replace(".",",")+" год";
+    cells+='<i style="left:'+l.toFixed(3)+'%;width:'+w.toFixed(3)+'%">'+(w>=du.length*1.9?du:"")+'</i>';
     var x=Math.max(0,Math.min(100-LW,l+w/2-LW/2)), r=x>=rows[0]+1.5?0:(x>=rows[1]+1.5?1:0);
     rows[r]=x+LW;
-    labs+='<span class="'+(fresh&&v[1]*30<=now.min?"past":"")+'" style="left:'+x.toFixed(2)+'%;width:'+LW.toFixed(2)+'%;text-align:center;top:'+(r?0:16)+'px">'+hm(v[0])+"–"+hm(v[1])+'</span>';
+    labs+='<span class="'+(isToday&&v[1]*30<=now.min?"past":"")+'" style="left:'+x.toFixed(2)+'%;width:'+LW.toFixed(2)+'%;text-align:center;top:'+(r?0:16)+'px">'+hm(v[0])+"–"+hm(v[1])+'</span>';
   });
   var two=rows[1]>=0; if(!two) labs=labs.replace(/top:16px/g,"top:0px");
   for(var t=3;t<24;t+=3) cells+='<u style="left:'+(t/24*100).toFixed(3)+'%"></u>';
-  if(fresh) cells+='<div class="past" style="width:'+nowPct.toFixed(2)+'%"></div>';
+  if(isToday) cells+='<div class="past" style="width:'+nowPct.toFixed(2)+'%"></div>';
   var ticks=""; for(var t2=0;t2<=24;t2+=3) ticks+='<span style="left:'+(t2/24*100).toFixed(2)+'%;transform:translateX('+(t2===0?"0":t2===24?"-100%":"-50%")+')">'+("0"+t2).slice(-2)+'</span>';
-  var ivs=intervals(row).map(function(v){return "<b>"+hm(v[0])+"–"+hm(v[1])+"</b>"}).join(", ");
-  return '<div class="entry"><div class="status '+st+'"><div class="dot">'+(st==="on"?ICON_ON:ICON_OFF)+'</div><div><h2>'+title+'</h2><p>'+esc(until)+'</p></div></div>'+
-    fact+'<div style="margin-top:8px">'+head+'</div>'+
-    '<div class="stripwrap">'+(iv.length?'<div class="slabs" style="height:'+(two?34:18)+'px">'+labs+'</div>':"")+
-      '<div style="position:relative"><div class="strip">'+cells+'</div>'+(fresh?'<div class="nowm" style="left:calc('+nowPct.toFixed(2)+'% - 1px)"></div>':"")+'</div>'+
+  var ivs=iv.map(function(v){return "<b>"+hm(v[0])+"–"+hm(v[1])+"</b>"}).join(", ");
+  return '<div class="stripwrap">'+(iv.length?'<div class="slabs" style="height:'+(two?34:18)+'px">'+labs+'</div>':"")+
+      '<div style="position:relative"><div class="strip">'+cells+'</div>'+(isToday?'<div class="nowm" style="left:calc('+nowPct.toFixed(2)+'% - 1px)"></div>':"")+'</div>'+
       '<div class="hours">'+ticks+'</div></div>'+
-    '<div class="ivs">'+(ivs?"Відключення: "+ivs:"Відключень за графіком немає")+'</div></div>';
+    '<div class="ivs">'+(ivs?"Відключення: "+ivs:"Відключень за графіком немає")+'</div>';
+}
+// історія: години без світла за графіком за попередні дні (без сьогодні)
+function histDays(q,n){
+  if(!HIST||!HIST.days) return []; var t=kyivNow().date, out=[];
+  for(var i=n;i>=1;i--){var d=addDay(t,-i), v=HIST.days[d]; out.push({d:d, h:v&&v[q]!=null?v[q]/2:null})}
+  return out;
+}
+function histHtml(q){
+  if(q==="0") return "";
+  var a=histDays(q,7).filter(function(x){return x.h!=null}); if(a.length<2) return "";
+  var sum=a.reduce(function(s,x){return s+x.h},0);
+  return '<div class="hist">За '+(a.length===7?"останній тиждень":"останні "+a.length+" дн.")+' за графіком: <b>'+String(sum).replace(".",",")+' год</b> без світла, в середньому '+String(Math.round(sum/a.length*10)/10).replace(".",",")+' год на добу</div>';
 }
 function track(n){try{if(window.umami&&umami.track)umami.track(n)}catch(e){}}
-function showResult(r){
-  track("Картка: "+(r.h?"будинок":"вулиця"));
+function showResult(r,quiet){
+  if(!quiet) track("Картка: "+(r.h?"будинок":"вулиця"));
   lastResult=r; r.codes=orderCodes(r.codes);
   var first=stateNow(codeInfo(r.codes[0]).row)||"", evs=eventsFor(r.rem,r.sp,r.st,r.h), ae=activeEvent(r.rem,r.sp,r.st,r.h), now=Date.now()/1000;
   var lv0=liveState(codeInfo(r.codes[0]).q); if(lv0&&first) first=lv0;
@@ -481,10 +653,171 @@ function showResult(r){
   if(hasRes&&hasLeg) html+='<div class="note" style="color:var(--muted)">У будинку різні підчерги для квартир і для нежитлових приміщень (магазини, офіси, ЖЕК). Для мешканців діє перша.</div>';
   html+=r.codes.map(function(c){return entryHtml(c,r.codes.length>1)}).join("");
   if(OUT&&OUT.gav&&OUT.gav.active&&outFresh()) html+='<div class="alert fact"><b>Діють аварійні відключення по області</b>Графік нижче зараз може не застосовуватися.</div>';
+  var sv=isHome(r);
+  html+='<div class="actions"><button id="aSave" class="'+(sv?"saved":"")+'"><svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>'+(sv?"Збережено":"Зберегти")+'</button>'+
+    '<button id="aShare"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Поділитися</button>'+
+    '<button id="aErr" class="small" aria-label="Повідомити про помилку">Тут помилка?</button></div>';
   html+='<div class="foot">Графік діє, коли «Укренерго» застосовує обмеження. '+(outFresh()?"Аварії та ремонти: дані обленерго на "+fmtT(OUT.updated)+". ":"Оперативні дані про аварії зараз недоступні. ")+'<a href="#" id="toAbout">Докладніше</a></div>';
   openSheet(html);
   $("toAbout").onclick=function(e){e.preventDefault();openPanel("about")};
+  $("aSave").onclick=function(){toggleHome(r)};
+  $("aShare").onclick=function(){shareAddr(r)};
+  $("aErr").onclick=function(){openReport(r)};
+  Array.prototype.forEach.call($("sheetBody").querySelectorAll(".tag.q"),function(t){t.onclick=function(){openQueue(t.dataset.q)}});
 }
+
+/* ---------- кольори підчерг ---------- */
+var QCOL={"1.1":"#1d4ed8","1.2":"#60a5fa","2.1":"#15803d","2.2":"#86efac","3.1":"#7e22ce","3.2":"#d8b4fe","4.1":"#c2410c","4.2":"#fdba74","5.1":"#0f766e","5.2":"#5eead4","6.1":"#be185d","6.2":"#f9a8d4","0":"#f5f5f4"};
+function toast(t){var e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove("show")},2200)}
+function ls(k,v){try{if(v===undefined){var x=localStorage.getItem(k);return x?JSON.parse(x):null}localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
+
+/* ---------- мої адреси ---------- */
+function addrId(r){return [r.rem,r.sp,r.st,r.h].join("|")}
+function homes(){return ls("svitlo.homes")||[]}
+function isHome(r){var id=addrId(r);return homes().some(function(h){return addrId(h)===id})}
+function toggleHome(r){
+  var hs=homes(), id=addrId(r), i=-1; hs.forEach(function(h,k){if(addrId(h)===id)i=k});
+  if(i>=0){hs.splice(i,1);toast("Адресу прибрано з «Моїх адрес»")}
+  else{hs.push({rem:r.rem,sp:r.sp,st:r.st,h:r.h,codes:r.codes,lat:r.lat,lon:r.lon});toast(hs.length===1?"Збережено. Ця адреса відкриватиметься одразу при вході":"Збережено в «Мої адреси»");track("Збережено адресу")}
+  ls("svitlo.homes",hs); showResult(r,true);
+}
+function addrState(h){
+  var ae=activeEvent(h.rem,h.sp,h.st,h.h); if(ae) return [ae.kind,ae.kind==="acc"?"Аварійне відключення":"Планові роботи"];
+  var c=orderCodes(h.codes)[0], ci=codeInfo(c); if(ci.nosched) return ["on","Не вимикається за графіком"];
+  var st=stateNow(ci.row), lv=liveState(ci.q); if(lv&&st) st=lv;
+  if(!st) return ["","Графік на сьогодні не опубліковано"];
+  var row=ci.row, slot=Math.min(47,Math.floor(kyivNow().min/30)), j=slot, cur=row.charAt(slot); while(j<48&&row.charAt(j)===cur) j++;
+  return [st,(st==="off"?"Світла немає":"Світло є")+(j<48?(st==="off"?", з'явиться о ":", вимкнуть о ")+hm(j):"")+" · підчерга "+ci.q];
+}
+function renderHomes(){
+  var hs=homes();
+  $("homesList").innerHTML=hs.map(function(h,i){var a=addrState(h);
+    return '<div class="home"><span class="hd '+a[0]+'"></span><div data-i="'+i+'"><b>'+esc((h.st?h.st+(h.h?", "+h.h:""):h.sp))+'</b><small>'+esc(h.st?h.sp+" · ":"")+esc(a[1])+'</small></div><button data-del="'+i+'" aria-label="Прибрати">×</button></div>'}).join("");
+}
+$("homesList").onclick=function(e){
+  var d=e.target.closest("[data-del]"), o=e.target.closest("[data-i]"), hs=homes();
+  if(d){hs.splice(+d.dataset.del,1);ls("svitlo.homes",hs);renderHomes();return}
+  if(o){$("homesP").classList.remove("open");openAddr(hs[+o.dataset.i])}
+};
+// відкрити адресу: картка + карта (координати збережені або з індексу)
+function openAddr(h){
+  $("hint").style.opacity=0; if(pin){map.removeLayer(pin);pin=null}
+  var r={lat:h.lat,lon:h.lon,rem:h.rem,sp:h.sp,st:h.st,h:h.h,codes:h.codes.slice()};
+  if(r.lat==null){showResult(r);goToAddress(r);return}
+  map.setView([r.lat,r.lon],18,{animate:false}); showResult(r);
+  map.panBy([0,Math.min($("sheet").offsetHeight,innerHeight*.78)/2],{animate:false});
+  // підчерга могла змінитися в базі обленерго після збереження
+  loadRem(r.rem).then(function(d){
+    var g=((d[r.sp]||{})[r.st])||{}, codes=[]; Object.keys(g).forEach(function(c){ if(!r.h||g[c].split(",").indexOf(r.h)>=0) codes.push(c) });
+    codes=orderCodes(dedupe(codes)); if(!codes.length||codes.join()===orderCodes(r.codes).join()) return;
+    r.codes=codes; var hs=homes(); hs.forEach(function(x){if(addrId(x)===addrId(r))x.codes=codes}); ls("svitlo.homes",hs);
+    if(lastResult===r) showResult(r,true);
+  }).catch(function(){});
+}
+
+/* ---------- поділитися і посилання ---------- */
+function baseUrl(){return location.href.split("#")[0]}
+function shareAddr(r){
+  var url=baseUrl()+"#a="+encodeURIComponent(addrId(r))+(r.lat!=null?"@"+r.lat.toFixed(5)+","+r.lon.toFixed(5):"");
+  var a=addrState(r), text=(r.st?r.st+(r.h?", "+r.h:"")+", "+r.sp:r.sp)+": "+a[1];
+  doShare("Світло є?",text,url); track("Поділитися");
+}
+function doShare(title,text,url){
+  if(navigator.share){navigator.share({title:title,text:text,url:url}).catch(function(){});return}
+  var t=text+"\n"+url;
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast("Посилання скопійовано")},function(){prompt("Скопіюйте посилання:",url)});
+}
+// #a=rem|sp|st|h[@lat,lon]  або  #q=3.2
+function openHash(){
+  var h=decodeURIComponent(location.hash.slice(1)); if(!h) return false;
+  if(/^q=/.test(h)){ var q=h.slice(2); if(QCOL[q]){openQueue(q);return true} return false }
+  if(!/^a=/.test(h)) return false;
+  var m=h.slice(2).split("@"), p=m[0].split("|"); if(p.length<4) return false;
+  var ll=m[1]?m[1].split(",").map(Number):null;
+  loadRem(p[0]).then(function(d){
+    var g=((d[p[1]]||{})[p[2]])||{}, codes=[];
+    Object.keys(g).forEach(function(c){ if(!p[3]||g[c].split(",").indexOf(p[3])>=0) codes.push(c) });
+    if(!codes.length){ toast("Адресу з посилання не знайдено в базі"); return }
+    openAddr({rem:p[0],sp:p[1],st:p[2],h:p[3],codes:dedupe(codes),lat:ll?ll[0]:null,lon:ll?ll[1]:null});
+    track("Відкрито за посиланням");
+  }).catch(function(){toast("Адресу з посилання не знайдено")});
+  return true;
+}
+addEventListener("hashchange",openHash);
+
+/* ---------- сторінка підчерги ---------- */
+var curQ=null;
+function openQueue(q,quiet){
+  curQ=q; if(!quiet) track("Підчерга"); $("qTitle").textContent="Підчерга "+q;
+  var b="", today=kyivNow().date, g0=gridDay(q,0), g1=gridDay(q,1);
+  if(g0){ var cur=stateNow(g0); b+='<div class="status '+cur+'" style="margin-top:4px"><div class="dot">'+(cur==="on"?ICON_ON:ICON_OFF)+'</div><div><h2>'+(cur==="on"?"Зараз світло є":"Зараз відключення")+'</h2><p>За графіком на '+dmy(today)+'</p></div></div>'+stripHtml(g0,true) }
+  else b+='<p class="empty">Графік на сьогодні ще не опубліковано.</p>';
+  if(g1) b+='<div class="day">Завтра, '+dmy(addDay(today,1))+'</div>'+stripHtml(g1,false);
+  else b+='<p class="empty" style="margin-top:12px">Графік на завтра обленерго зазвичай публікує ввечері.</p>';
+  var hd=histDays(q,14), known=hd.filter(function(x){return x.h!=null});
+  b+='<h4 style="margin:18px 0 0">Години без світла за графіком</h4>';
+  if(known.length>=2){
+    var mx=Math.max(4,Math.max.apply(null,known.map(function(x){return x.h}))), sum=known.reduce(function(s,x){return s+x.h},0);
+    b+='<div class="bars">'+hd.map(function(x){return '<div class="'+(x.h==null?"none":"")+'" style="height:'+(x.h==null?2:Math.max(2,x.h/mx*100))+'%" title="'+dmy(x.d)+': '+(x.h==null?"немає даних":x.h+" год")+'"></div>'}).join("")+'</div>'+
+       '<div class="blab">'+hd.map(function(x,i){return '<span>'+(i%2===0?x.d.slice(8):"")+'</span>'}).join("")+'</div>'+
+       '<p class="hist">За '+known.length+' дн.: <b>'+String(sum).replace(".",",")+' год</b>, в середньому '+String(Math.round(sum/known.length*10)/10).replace(".",",")+' год на добу. Найбільше: '+Math.max.apply(null,known.map(function(x){return x.h}))+' год.</p>';
+  } else b+='<p class="empty">Історія тільки почала накопичуватися, графік з\'явиться за кілька днів.</p>';
+  b+='<button class="btnp" id="qShare">Поділитися графіком підчерги</button>';
+  $("qBody").innerHTML=b; openPanel("queueP");
+  $("qShare").onclick=function(){doShare("Світло є? Підчерга "+q,"Графік відключень підчерги "+q+" (Житомиробленерго)",baseUrl()+"#q="+q);track("Поділитися підчергою")};
+}
+
+/* ---------- повідомити про помилку ---------- */
+var REPORT_URL="https://github.com/primusua-ux/svitlo-zt/issues/new";
+var repAddr=null;
+function openReport(r){
+  repAddr=r; $("repAddr").textContent="Адреса: "+(r.st?r.sp+", "+r.st+(r.h?", "+r.h:""):r.sp)+" · на сайті: підчерга "+r.codes.map(function(c){return c.replace("ю"," (нежитлові)")}).join(", ");
+  $("repText").value=""; openPanel("reportP"); track("Повідомити про помилку");
+}
+$("repSend").onclick=function(){
+  var r=repAddr; if(!r) return;
+  var body="Адреса: "+[r.sp,r.st,r.h].filter(Boolean).join(", ")+"\nРЕМ: "+r.rem+"\nНа сайті: "+r.codes.join(", ")+(r.lat!=null?"\nКоординати: "+r.lat.toFixed(5)+", "+r.lon.toFixed(5):"")+"\n\nЩо не так:\n"+$("repText").value;
+  open(REPORT_URL+"?title="+encodeURIComponent("Помилка: "+[r.st,r.h].filter(Boolean).join(", ")+" ("+r.sp+")")+"&body="+encodeURIComponent(body),"_blank","noopener");
+  $("reportP").classList.remove("open");
+};
+
+/* ---------- режими карти: підчерги та інший час ---------- */
+function syncBar(){
+  var tb=VIEW.slot!=null, qb=VIEW.queues;
+  $("timeBox").hidden=!tb; $("qBox").hidden=!qb; $("mapbar").classList.toggle("open",tb||qb);
+  $("btnTime").classList.toggle("on",tb); $("btnQueues").classList.toggle("on",qb);
+  if(tb){ var day=VIEW.day, lbl="Карта на "+hm(VIEW.slot)+(day?" завтра":" сьогодні");
+    if(!gridDay("1.1",day)) lbl+=" (графіка немає)";
+    $("timeLbl").textContent=lbl; $("timeR").max=hasTomorrow()?95:47; $("timeR").value=VIEW.slot+day*48;
+    $("timeTicks").innerHTML=hasTomorrow()?"<span>00</span><span>12</span><span>сьогодні | завтра</span><span>12</span><span>24</span>":"<span>00</span><span>06</span><span>12</span><span>18</span><span>24</span>" }
+  $("locate").style.display=tb||qb?"none":"";
+  redrawDots();
+}
+$("btnTime").onclick=function(){
+  if(VIEW.slot!=null){VIEW.slot=null;syncBar();return}
+  closeSheet(); VIEW.queues=false; var s0=Math.min(47,Math.floor(kyivNow().min/30)+2); VIEW.slot=s0%48; VIEW.day=0; syncBar(); track("Карта на інший час");
+};
+$("timeR").oninput=function(){var v=+this.value;VIEW.day=v>=48?1:0;VIEW.slot=v%48;syncBar()};
+$("timeNow").onclick=$("timeClose").onclick=function(){VIEW.slot=null;syncBar()};
+$("btnQueues").onclick=function(){
+  VIEW.queues=!VIEW.queues; if(VIEW.queues){VIEW.slot=null;closeSheet();track("Підчерги на карті");
+    if(map.getZoom()<16) toast("Наблизьте карту, щоб побачити будинки")}
+  syncBar();
+};
+$("qClose").onclick=function(){VIEW.queues=false;syncBar()};
+$("qLeg").innerHTML=Object.keys(QCOL).filter(function(q){return q!=="0"}).map(function(q){return '<span data-q="'+q+'"><i style="background:'+QCOL[q]+'"></i>'+q+'</span>'}).join("")+'<span><i style="background:'+QCOL["0"]+'"></i>без відключень</span>';
+$("qLeg").onclick=function(e){var t=e.target.closest("[data-q]");if(t)openQueue(t.dataset.q)};
+
+/* ---------- тема ---------- */
+function applyTheme(){
+  var t=ls("svitlo.theme")||"auto", dark=t==="dark"||(t==="auto"&&!(matchMedia&&matchMedia("(prefers-color-scheme: light)").matches));
+  document.documentElement.setAttribute("data-theme",dark?"dark":"light");
+  document.querySelector('meta[name=theme-color]').content=dark?"#14181f":"#f2f4f7";
+  Array.prototype.forEach.call($("themeSeg").children,function(b){b.className=b.dataset.t===t?"on":""});
+}
+$("themeSeg").onclick=function(e){var t=e.target.dataset&&e.target.dataset.t;if(!t)return;ls("svitlo.theme",t);applyTheme();track("Тема: "+t)};
+try{matchMedia("(prefers-color-scheme: light)").addEventListener("change",applyTheme)}catch(e){}
+applyTheme();
 
 /* ---------- геолокація ---------- */
 $("locate").onclick=function(){
@@ -502,6 +835,7 @@ $("brand").onclick=function(){openPanel("about")};
 $("btnHelp").onclick=function(){track("Допомога");openPanel("about")};
 $("psLogo").onclick=function(){openPanel("about")};
 $("btnAcc").onclick=function(){track("Де аварії");openPanel("accP");renderAcc()};
+$("btnHome").onclick=function(){track("Мої адреси");renderHomes();openPanel("homesP")};
 
 /* ---------- перелік аварій ---------- */
 var accTab=0;
@@ -604,11 +938,17 @@ $("hList").onclick=function(e){
 };
 
 /* ---------- старт ---------- */
-fetch("data/pts/index.json").then(function(r){return r.json()}).then(function(d){CELLS={};d.forEach(function(k){CELLS[k]=1});redrawDots()}).catch(function(){CELLS={}});
+fetch("data/pts/index.json").then(function(r){return r.json()}).then(function(d){CELLS={};if(d.k){TS=d.ts;d=d.k}d.forEach(function(k){CELLS[k]=1});redrawDots()}).catch(function(){CELLS={}});
 fetch("data/pts/places.json").then(function(r){return r.json()}).then(function(d){PLACES=d}).catch(function(){});
-loadSchedule(); loadOutages();
+loadSchedule(); loadOutages(); loadHistory();
 setInterval(function(){loadSchedule();loadOutages()},5*60*1000);
-setInterval(function(){redrawDots();if(lastResult)showResult(lastResult)},60*1000);
+setInterval(loadHistory,60*60*1000);
+// при вході: посилання з адресою, інакше перша збережена адреса
+var opened=openHash();
+if(!opened&&homes().length){ openAddr(homes()[0]); opened=true }
+if(opened) $("hint").style.display="none";
+if("serviceWorker" in navigator&&location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(function(){});
+setInterval(function(){updSub();if(VIEW.slot==null)redrawDots();if(lastResult)showResult(lastResult,true)},60*1000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden){loadSchedule();loadOutages()}});
 setTimeout(function(){$("hint").style.opacity=0},6000);
 })();

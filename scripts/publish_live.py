@@ -7,10 +7,30 @@ out = os.path.join(root, ".live"); os.makedirs(out, exist_ok=True)
 def git(*a, **kw): return subprocess.run(["git", "-C", root, *a], capture_output=True, text=True, **kw)
 
 # попередня версія outages.json як запасна, якщо сервіс зараз недоступний
+import json
+hist = {}
 if git("fetch", "--depth=1", "origin", "live").returncode == 0:
     old = subprocess.run(["git", "-C", root, "show", "FETCH_HEAD:outages.json"], capture_output=True)
     if old.returncode == 0: open(os.path.join(out, "outages.json"), "wb").write(old.stdout)
+    old = subprocess.run(["git", "-C", root, "show", "FETCH_HEAD:history.json"], capture_output=True)
+    if old.returncode == 0:
+        try: hist = json.loads(old.stdout)
+        except ValueError: hist = {}
 shutil.copy(os.path.join(root, "data", "schedule.json"), os.path.join(out, "schedule.json"))
+# історія: скільки пів годин кожна підчерга без світла за графіком, по днях (останні 62 дні).
+# Для дня береться останній опублікований варіант графіка.
+try:
+    sch = json.load(open(os.path.join(root, "data", "schedule.json"), encoding="utf-8"))
+    days = hist.setdefault("days", {})
+    try:   # стартові дні, зібрані з git-історії data/schedule.json
+        for d, v in json.load(open(os.path.join(root, "data", "history_seed.json"), encoding="utf-8"))["days"].items(): days.setdefault(d, v)
+    except (OSError, ValueError, KeyError): pass
+    for d, grid in (sch.get("days") or {sch["date"]: sch["grid"]}).items():
+        days[d] = {q: row.count("1") for q, row in grid.items()}
+    for d in sorted(days)[:-62]: del days[d]
+    json.dump(hist, open(os.path.join(out, "history.json"), "w", encoding="utf-8"), separators=(",", ":"))
+except Exception as e:
+    print("history: помилка", e)
 r = subprocess.run([sys.executable, os.path.join(here, "update_outages.py"), os.path.join(root, "data"), os.path.join(out, "outages.json.new")])
 if r.returncode == 0: os.replace(os.path.join(out, "outages.json.new"), os.path.join(out, "outages.json"))
 else: print("update_outages: помилка, лишаю попередні дані")

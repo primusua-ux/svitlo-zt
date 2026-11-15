@@ -388,12 +388,25 @@ if os.path.exists(f"{D}/osm/bld.tsv.gz"):
         icells[(math.floor(la * 10), math.floor(lo * 10))].append((la, lo, s1[0], s1[1], disp[s1], "", c1, poly)); stats["bld_painted"] += 1
 
 # ---------- запис плиток ----------
-for k in icells: cells.setdefault(k, [])
+# Плитки по 0.05 градуса (на телефоні вантажиться лише потрібне). Контури будівель: вершини в одиницях 1e-5 градуса
+# (близько 1 м), кожна відносно попередньої, перша відносно точки будинку. Формат позначено "v": 2.
+TS = 20
+def qpoly(a):
+    out = []; py = px = 0
+    for i in range(0, len(a), 2):
+        y = round(a[i] / 10); x = round(a[i + 1] / 10); out += [y - py, x - px]; py, px = y, x
+    return out
+wcells = defaultdict(list); wicells = defaultdict(list)
+for pts in cells.values():
+    for t in pts: wcells[(math.floor(t[0] * TS), math.floor(t[1] * TS))].append(t)
+for pts in icells.values():
+    for t in pts: wicells[(math.floor(t[0] * TS), math.floor(t[1] * TS))].append(t)
+for k in wicells: wcells.setdefault(k, [])
 out = f"{D}/pts"; os.makedirs(out, exist_ok=True)
 for f in os.listdir(out): os.remove(f"{out}/{f}")
 keys = []
-for (cy, cx), pts in sorted(cells.items()):
-    la0, lo0 = cy * 10000, cx * 10000
+for (cy, cx), pts in sorted(wcells.items()):
+    la0, lo0 = cy * (100000 // TS), cx * (100000 // TS)
     names, nidx, streets, sidx, P = [], {}, [], {}, []; pdone = set()
     haspoly = defaultdict(list)
     for la, lo, rem, sp, st, hn, codes in pts:
@@ -408,17 +421,17 @@ for (cy, cx), pts in sorted(cells.items()):
         poly = polyof.get((la, lo, hn)) if hn else None
         if poly:
             if (sk, hn, poly) in pdone: continue      # та сама будівля двічі (точка адреси і сама будівля)
-            pdone.add((sk, hn, poly)); row.append([int(x) for x in poly.split(",")]); stats["with_outline"] += 1
+            pdone.add((sk, hn, poly)); row.append(qpoly([int(x) for x in poly.split(",")])); stats["with_outline"] += 1
         P.append(row)
-    for la, lo, rem, sp, st, hn, code, poly in sorted(icells.get((cy, cx), ())):
+    for la, lo, rem, sp, st, hn, code, poly in sorted(wicells.get((cy, cx), ())):
         if (rem, sp) not in nidx: nidx[(rem, sp)] = len(names); names.append([rem, sp])
         sk = (nidx[(rem, sp)], st)
         if sk not in sidx: sidx[sk] = len(streets); streets.append([nidx[(rem, sp)], st])
-        P.append([round(la * 1e5) - la0, round(lo * 1e5) - lo0, sidx[sk], hn, code, [int(x) for x in poly.split(",")] if poly else 0, 1])
+        P.append([round(la * 1e5) - la0, round(lo * 1e5) - lo0, sidx[sk], hn, code, qpoly([int(x) for x in poly.split(",")]) if poly else 0, 1])
     k = f"{cy}_{cx}"; keys.append(k)
-    json.dump({"o": [la0, lo0], "n": names, "s": streets, "p": P}, open(f"{out}/{k}.json", "w", encoding="utf-8"),
+    json.dump({"v": 2, "o": [la0, lo0], "n": names, "s": streets, "p": P}, open(f"{out}/{k}.json", "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
-json.dump(keys, open(f"{out}/index.json", "w"), separators=(",", ":"))
+json.dump({"v": 2, "ts": TS, "k": keys}, open(f"{out}/index.json", "w"), separators=(",", ":"))
 
 # індекс координат для пошуку за адресою: data/geo/<n>.json = {нас. пункт: {вулиця: {будинок або "": [lat, lon]}}}
 geo = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
