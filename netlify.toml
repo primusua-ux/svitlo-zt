@@ -1,0 +1,12 @@
+# Сайт статичний: збірки немає, публікується корінь репозиторію.
+[build]
+  publish = "."
+  command = ""
+  # Код 0 = пропустити деплой. Деплоїмо лише коли змінилась сама сторінка або дані адрес/будинків.
+  # Оновлення графіка (кожні 15 хв) сюди не потрапляють: сторінка читає їх з GitHub.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- index.html vendor data/pts data/geo data/rem data/index.json netlify.toml"
+
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
