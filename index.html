@@ -130,6 +130,7 @@ a{color:var(--accent)}
 .gav{position:fixed;left:10px;right:68px;top:calc(66px + var(--safe-t));z-index:490;background:#7a1f1d;color:#fff;border-radius:12px;padding:8px 12px;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.35);display:none}
 .gav a{color:#ffd9a8}
 </style>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="e90a0de3-497f-455a-ae67-4159b55d6c29"></script>
 </head>
 <body>
 <div id="map"></div>
@@ -206,6 +207,7 @@ a{color:var(--accent)}
   <h4>Звідки дані і наскільки вони точні</h4>
   <p>Графік і черги: <a href="https://www.ztoe.com.ua/unhooking-search.php" target="_blank" rel="noopener">АТ «Житомиробленерго»</a>. Аварії, ремонти і фактичний стан черг: сервіс обленерго <a href="https://ztoe-poweron.inneti.net/" target="_blank" rel="noopener">«Чому немає світла?»</a>. Дані оновлюються кожні 15 хвилин, а після перемикання черг можуть запізнюватися до пів години.</p>
   <p>Графік діє, коли «Укренерго» застосовує обмеження. Під час обласних аварійних відключень графік не застосовується, про це попередить червоний банер угорі.</p>
+  <p>Сайт збирає лише знеособлену статистику відвідувань (сервіс Umami, без cookie): кількість переглядів і натискань на кнопки. Адреси, які ви шукаєте чи торкаєтесь, не передаються.</p>
   <p>Карта і координати будинків: © учасники <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Сторінка неофіційна, можливі неточності у визначенні адреси.</p>
   <div class="psfoot"><span class="ps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="#f6c343"/><path d="M8 18V6h5.2a3.6 3.6 0 0 1 0 7.2H8" fill="none" stroke="#14181f" stroke-width="2.4" stroke-linejoin="round"/></svg><span>Primus<i>Soft</i></span></span><span>Розробка: PrimusSoft</span></div>
 </div>
@@ -381,6 +383,7 @@ function showStreet(lat,lon,p){
 // перехід на карті до знайденої адреси: будинок, інакше вулиця, інакше населений пункт
 var geoCache={};
 function goToAddress(r){
+  track("Перехід до адреси");
   loadRem0().then(function(ix){
     var f=ix[r.rem].file.replace("rem/","geo/");
     return geoCache[f]||(geoCache[f]=fetch("data/"+f).then(function(x){return x.ok?x.json():{}}).catch(function(){return {}}));
@@ -460,7 +463,9 @@ function entryHtml(code,multi){
       '<div class="hours">'+ticks+'</div></div>'+
     '<div class="ivs">'+(ivs?"Відключення: "+ivs:"Відключень за графіком немає")+'</div></div>';
 }
+function track(n){try{if(window.umami&&umami.track)umami.track(n)}catch(e){}}
 function showResult(r){
+  track("Картка: "+(r.h?"будинок":"вулиця"));
   lastResult=r; r.codes=orderCodes(r.codes);
   var first=stateNow(codeInfo(r.codes[0]).row)||"", evs=eventsFor(r.rem,r.sp,r.st,r.h), ae=activeEvent(r.rem,r.sp,r.st,r.h), now=Date.now()/1000;
   var lv0=liveState(codeInfo(r.codes[0]).q); if(lv0&&first) first=lv0;
@@ -492,11 +497,11 @@ $("locate").onclick=function(){
 /* ---------- панелі ---------- */
 function openPanel(id){ $(id).classList.add("open"); if(id==="search") initSearch() }
 document.querySelectorAll("[data-close]").forEach(function(b){b.onclick=function(){$(b.dataset.close).classList.remove("open")}});
-$("btnSearch").onclick=function(){openPanel("search")};
+$("btnSearch").onclick=function(){track("Пошук");openPanel("search")};
 $("brand").onclick=function(){openPanel("about")};
-$("btnHelp").onclick=function(){openPanel("about")};
+$("btnHelp").onclick=function(){track("Допомога");openPanel("about")};
 $("psLogo").onclick=function(){openPanel("about")};
-$("btnAcc").onclick=function(){openPanel("accP");renderAcc()};
+$("btnAcc").onclick=function(){track("Де аварії");openPanel("accP");renderAcc()};
 
 /* ---------- перелік аварій ---------- */
 var accTab=0;
