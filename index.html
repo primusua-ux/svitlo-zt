@@ -90,12 +90,17 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
 .on h2{color:var(--on)} .off h2{color:var(--off)}
 .status p{margin:2px 0 0;color:var(--muted);font-size:14px}
 .tag{display:inline-block;background:var(--panel2);border-radius:8px;padding:2px 8px;font-size:13px;color:var(--text);margin-right:6px}
-.strip{position:relative;margin-top:12px;height:26px;border-radius:6px;overflow:hidden;display:flex;background:var(--on)}
-.strip i{flex:1;height:100%}
-.strip i.x{background:var(--off)}
-.strip i.h{box-shadow:inset 1px 0 0 rgba(0,0,0,.28)}
-.strip .now{position:absolute;top:-2px;bottom:-2px;width:3px;background:#fff;box-shadow:0 0 0 1px #000;border-radius:2px}
-.hours{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:3px}
+.stripwrap{position:relative;margin-top:12px}
+.slabs{position:relative}
+.slabs span{position:absolute;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;line-height:16px}
+.slabs span.past{color:var(--muted);font-weight:400}
+.strip{position:relative;height:30px;border-radius:6px;overflow:hidden;background:var(--on)}
+.strip i{position:absolute;top:0;bottom:0;background:var(--off);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:600;color:#4a1110;white-space:nowrap;overflow:hidden}
+.strip u{position:absolute;bottom:0;height:7px;width:1px;background:rgba(0,0,0,.35)}
+.strip .past{position:absolute;top:0;bottom:0;left:0;background:var(--panel);opacity:.55}
+.nowm{position:absolute;bottom:-3px;height:36px;width:3px;background:#fff;box-shadow:0 0 0 1px #000;border-radius:2px}
+.hours{position:relative;height:16px;font-size:11px;color:var(--muted);margin-top:3px}
+.hours span{position:absolute;top:0}
 .ivs{margin-top:8px;font-size:14px;color:var(--muted)}
 .ivs b{color:var(--text);font-weight:600}
 .foot{margin-top:12px;font-size:12px;color:var(--muted)}
@@ -430,12 +435,25 @@ function entryHtml(code,multi){
     return '<div class="entry"><div class="status on"><div class="dot">'+ICON_ON+'</div><div><h2>Світло є</h2><p>Ця адреса не вимикається за графіком погодинних відключень, лише під час аварій</p></div></div>'+
       '<div style="margin-top:8px">'+head+'</div></div>';
   }
-  var cells=""; for(var i=0;i<48;i++) cells+='<i class="'+(row.charAt(i)==="1"?"x":"")+(i%4===0&&i?" h":"")+'"></i>';
+  // смуга: червоні відрізки з тривалістю всередині, час над ними, минуле приглушене
+  var iv=intervals(row), cells="", labs="", rows=[-9,-9], LW=Math.min(40,82/Math.max(200,document.documentElement.clientWidth-32)*100), nowPct=now.min/1440*100;
+  iv.forEach(function(v){
+    var l=v[0]/48*100, w=(v[1]-v[0])/48*100, hrs=(v[1]-v[0])/2, dur=String(hrs).replace(".",",")+" год";
+    cells+='<i style="left:'+l.toFixed(3)+'%;width:'+w.toFixed(3)+'%">'+(w>=dur.length*1.9?dur:"")+'</i>';
+    var x=Math.max(0,Math.min(100-LW,l+w/2-LW/2)), r=x>=rows[0]+1.5?0:(x>=rows[1]+1.5?1:0);
+    rows[r]=x+LW;
+    labs+='<span class="'+(fresh&&v[1]*30<=now.min?"past":"")+'" style="left:'+x.toFixed(2)+'%;width:'+LW.toFixed(2)+'%;text-align:center;top:'+(r?0:16)+'px">'+hm(v[0])+"–"+hm(v[1])+'</span>';
+  });
+  var two=rows[1]>=0; if(!two) labs=labs.replace(/top:16px/g,"top:0px");
+  for(var t=3;t<24;t+=3) cells+='<u style="left:'+(t/24*100).toFixed(3)+'%"></u>';
+  if(fresh) cells+='<div class="past" style="width:'+nowPct.toFixed(2)+'%"></div>';
+  var ticks=""; for(var t2=0;t2<=24;t2+=3) ticks+='<span style="left:'+(t2/24*100).toFixed(2)+'%;transform:translateX('+(t2===0?"0":t2===24?"-100%":"-50%")+')">'+("0"+t2).slice(-2)+'</span>';
   var ivs=intervals(row).map(function(v){return "<b>"+hm(v[0])+"–"+hm(v[1])+"</b>"}).join(", ");
   return '<div class="entry"><div class="status '+st+'"><div class="dot">'+(st==="on"?ICON_ON:ICON_OFF)+'</div><div><h2>'+title+'</h2><p>'+esc(until)+'</p></div></div>'+
     fact+'<div style="margin-top:8px">'+head+'</div>'+
-    '<div class="strip">'+cells+(fresh?'<div class="now" style="left:calc('+(now.min/1440*100).toFixed(2)+'% - 1px)"></div>':"")+'</div>'+
-    '<div class="hours"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>'+
+    '<div class="stripwrap">'+(iv.length?'<div class="slabs" style="height:'+(two?34:18)+'px">'+labs+'</div>':"")+
+      '<div style="position:relative"><div class="strip">'+cells+'</div>'+(fresh?'<div class="nowm" style="left:calc('+nowPct.toFixed(2)+'% - 1px)"></div>':"")+'</div>'+
+      '<div class="hours">'+ticks+'</div></div>'+
     '<div class="ivs">'+(ivs?"Відключення: "+ivs:"Відключень за графіком немає")+'</div></div>';
 }
 function showResult(r){
