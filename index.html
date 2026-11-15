@@ -601,7 +601,7 @@ loadSchedule(); loadOutages();
 setInterval(function(){loadSchedule();loadOutages()},5*60*1000);
 setInterval(function(){redrawDots();if(lastResult)showResult(lastResult)},60*1000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden){loadSchedule();loadOutages()}});
-setTimeout(function(){$("hint").style.opacity=0},3000);
+setTimeout(function(){$("hint").style.opacity=0},6000);
 })();
 </script>
 </body>
