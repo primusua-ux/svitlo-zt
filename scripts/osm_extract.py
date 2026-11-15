@@ -57,9 +57,33 @@ def inside(lat, lon, ring):
         j = i
     return c
 
+def simplify(r, tol_m):
+    """Дуглас-Пекер для замкненого контуру (точки lon, lat): прибирає вершини, що відхиляються менше ніж на tol_m."""
+    if len(r) <= 4: return r
+    k = math.cos(math.radians(r[0][1])) * 111320; m = 110540
+    P = [(p[0] * k, p[1] * m) for p in r]
+    def dp(i, j, keep):
+        ax, ay = P[i]; bx, by = P[j]; dx, dy = bx - ax, by - ay; L = dx * dx + dy * dy
+        best = -1; bi = -1
+        for t in range(i + 1, j):
+            px, py = P[t]
+            if L == 0: d = math.hypot(px - ax, py - ay)
+            else:
+                u = max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / L)); d = math.hypot(px - ax - u * dx, py - ay - u * dy)
+            if d > best: best = d; bi = t
+        if best > tol_m: keep.add(bi); dp(i, bi, keep); dp(bi, j, keep)
+    # дві опорні точки: перша і найвіддаленіша від неї
+    far = max(range(len(P)), key=lambda t: (P[t][0] - P[0][0]) ** 2 + (P[t][1] - P[0][1]) ** 2)
+    keep = {0, far}; dp(0, far, keep)
+    P.append(P[0]); dp(far, len(P) - 1, keep); P.pop()
+    return [r[t] for t in sorted(keep if len(r) not in keep else keep - {len(r)})]
+
 def encode(ring, lat, lon):
     r = ring[:-1] if len(ring) > 1 and ring[0] == ring[-1] else ring
-    if len(r) > 40: r = r[::(len(r) + 39) // 40]
+    tol = 0.5
+    r2 = simplify(r, tol)
+    while len(r2) > 60 and tol < 8: tol *= 2; r2 = simplify(r, tol)   # дуже складні контури: спрощуємо сильніше, але форму зберігаємо
+    r = r2
     if len(r) < 3: return ""
     return ",".join(f"{round((p[1] - lat) * 1e6)},{round((p[0] - lon) * 1e6)}" for p in r)
 
@@ -169,7 +193,6 @@ with gzip.open(f"{out}/bld.tsv.gz", "wt", encoding="utf-8") as fb:
         near = near_streets(lat, lon, 70, True)
         if not near: continue
         r2 = list(rr)
-        if len(r2) > 14: r2 = r2[::(len(r2) + 13) // 14]
         fb.write("\t".join([f"{lat:.6f}", f"{lon:.6f}", encode(r2, lat, lon), "|".join(near)]) + "\n"); nbld += 1
 print("адрес-точок прив'язано до найближчої будівлі:", nsnap, "; будівель без адреси біля вулиць:", nbld)
 print("адрес без вулиці: взято з відношень", nrel, "; найближчі вулиці для", nnear)
