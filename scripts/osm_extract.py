@@ -64,7 +64,7 @@ def encode(ring, lat, lon):
     return ",".join(f"{round((p[1] - lat) * 1e6)},{round((p[0] - lon) * 1e6)}" for p in r)
 
 # прохід 1: усі будівлі в сітку
-grid = defaultdict(list); nb = 0; SG = 0.003; sgrid = defaultdict(list)
+grid = defaultdict(list); nb = 0; btype = {}; SG = 0.003; sgrid = defaultdict(list)
 SKIP = {"garage", "garages", "shed", "roof", "hut", "kiosk", "service", "industrial", "warehouse", "barn", "greenhouse",
         "transformer_tower", "container", "carport", "ruins", "construction", "cowshed", "stable", "sty", "farm_auxiliary",
         "storage_tank", "toilets", "bunker", "church", "chapel", "school", "kindergarten", "hospital", "retail", "commercial", "office"}
@@ -89,6 +89,7 @@ for ln in open(src, encoding="utf-8"):
     xs = [p[0] for p in r]; ys = [p[1] for p in r]
     if max(xs) - min(xs) > 0.01 or max(ys) - min(ys) > 0.01: continue
     ring = tuple((p[0], p[1]) for p in r); nb += 1
+    if not f["properties"].get("addr:housenumber"): btype[ring] = f["properties"].get("building") or "yes"
 
     for gy in range(int(min(ys) / G), int(max(ys) / G) + 1):
         for gx in range(int(min(xs) / G), int(max(xs) / G) + 1):
@@ -102,16 +103,17 @@ def seg_dist(la, lo, s):
     t = 0 if L == 0 else max(0, min(1, -(ax * dx + ay * dy) / L))
     return math.hypot(ax + t * dx, ay + t * dy)
 
-def near_streets(la, lo, rmax=80):
+def near_streets(la, lo, rmax=80, dists=False):
     best = {}
     for gy in (int(la / SG) - 1, int(la / SG), int(la / SG) + 1):
         for gx in (int(lo / SG) - 1, int(lo / SG), int(lo / SG) + 1):
             for sg in sgrid.get((gy, gx), ()):
                 d = seg_dist(la, lo, sg)
                 if d < best.get(sg[4], 1e9): best[sg[4]] = d
-    return [k for k, d in sorted(best.items(), key=lambda x: x[1]) if d <= rmax][:3]
+    r = [(k, d) for k, d in sorted(best.items(), key=lambda x: x[1]) if d <= rmax][:3]
+    return [f"{k}:{d:.0f}" for k, d in r] if dists else [k for k, d in r]
 
-na = np_ = ns = npoly = nnear = nrel = 0; used = set()
+na = np_ = ns = npoly = nnear = nrel = nsnap = 0; used = set()
 with gzip.open(f"{out}/addr.tsv.gz", "wt", encoding="utf-8") as fa, \
      gzip.open(f"{out}/places.tsv.gz", "wt", encoding="utf-8") as fp, \
      gzip.open(f"{out}/streets.tsv.gz", "wt", encoding="utf-8") as fs:
@@ -126,6 +128,15 @@ with gzip.open(f"{out}/addr.tsv.gz", "wt", encoding="utf-8") as fa, \
             if ring is None and g["type"] == "Point":
                 for r in grid.get((int(lat / G), int(lon / G)), ()):
                     if inside(lat, lon, r): ring = r; used.add(r); break
+                if ring is None:                       # точка на стіні чи біля входу: найближча будівля до 4 м
+                    best = 4.0
+                    for gy in (-1, 0, 1):
+                        for gx in (-1, 0, 1):
+                            for r in grid.get((int(lat / G) + gy, int(lon / G) + gx), ()):
+                                if r in used or r not in btype: continue
+                                d = min(seg_dist(lat, lon, (r[i][1], r[i][0], r[i + 1][1], r[i + 1][0])) for i in range(len(r) - 1))
+                                if d < best: best = d; ring = r
+                    if ring is not None: used.add(ring); nsnap += 1
             poly = encode(ring, lat, lon) if ring else ""
             npoly += bool(poly)
             near = ""
@@ -142,6 +153,25 @@ with gzip.open(f"{out}/addr.tsv.gz", "wt", encoding="utf-8") as fa, \
         if g["type"] == "LineString" and t.get("highway") and (t.get("name:uk") or t.get("name")):
             fs.write("\t".join([f"{lat:.6f}", f"{lon:.6f}", clean(t.get("name:uk") or t.get("name")),
                                 clean(t.get("old_name:uk") or t.get("old_name"))]) + "\n"); ns += 1
+# будівлі без адреси: контур і найближчі вулиці з назвою (щоб розфарбувати за вулицею)
+def area_m2(r):
+    k = math.cos(math.radians(r[0][1])) * 111320; m = 110540; a = 0
+    for i in range(len(r) - 1): a += (r[i][0] * k) * (r[i + 1][1] * m) - (r[i + 1][0] * k) * (r[i][1] * m)
+    return abs(a) / 2
+nbld = 0
+with gzip.open(f"{out}/bld.tsv.gz", "wt", encoding="utf-8") as fb:
+    for ring, bt in btype.items():
+        if ring in used or bt in SKIP or len(ring) < 4: continue
+        a = area_m2(ring)
+        if a < 40 or a > 4000: continue
+        rr = ring[:-1] if ring[0] == ring[-1] else ring
+        lat = sum(p[1] for p in rr) / len(rr); lon = sum(p[0] for p in rr) / len(rr)
+        near = near_streets(lat, lon, 70, True)
+        if not near: continue
+        r2 = list(rr)
+        if len(r2) > 14: r2 = r2[::(len(r2) + 13) // 14]
+        fb.write("\t".join([f"{lat:.6f}", f"{lon:.6f}", encode(r2, lat, lon), "|".join(near)]) + "\n"); nbld += 1
+print("адрес-точок прив'язано до найближчої будівлі:", nsnap, "; будівель без адреси біля вулиць:", nbld)
 print("адрес без вулиці: взято з відношень", nrel, "; найближчі вулиці для", nnear)
 print("адрес:", na, "з контуром будівлі:", npoly, "населених пунктів:", np_, "відрізків вулиць:", ns)
 
