@@ -183,6 +183,20 @@ def take_house(la, lo, rem, sp, k, hk, hn, codes, osk=None):
     seen.add(key); matched_houses.add((rem, sp, k, hk)); stats["matched"] += 1
     house_rows.append((la, lo, rem, sp, k, hk, hn.strip(), "|".join(collapse(codes))))
 
+# попередній прохід: якорі з рідкісних назв вулиць. Землі громади бувають далеко від центру села (Смоківка належить до Вересів,
+# хоча найближчий населений пункт там Глибочиця), тож для поширених назв вулиць спершу дивимось на якорі поруч
+for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
+    cols = ln.rstrip("\n").split("\t"); la = float(cols[0]); lo = float(cols[1]); hn = cols[2]; st = cols[3] or cols[4]
+    if not hn or not st: continue
+    sk = street_key(st)
+    if freq[sk[1]] > COMMON: continue
+    hk = house_key(hn); cs = candidates(la, lo, cols[5]); hits = set()
+    for rem, sp in cs + ext_cands(la, lo, set(cs)):
+        m = zt[(rem, sp)]; k = find_street(m, sk, la, lo)
+        if k is not None and hk in m[k]: hits.add((rem, sp))
+    if len(hits) == 1: add_anchor(la, lo, *next(iter(hits)))
+stats["pre_anchors"] = sum(len(v) for v in anchors.values())
+
 pend_h = []; polyof = {}
 for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
     cols = ln.rstrip("\n").split("\t")
@@ -194,6 +208,8 @@ for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
     if not hn or (not st and not near): stats["no_street"] += 1; continue
     hk = house_key(hn); hit = None
     cands = candidates(la, lo, city)
+    an = [x for x in anchored(la, lo, 0.4) if x in zt]
+    if an: cands = sorted(an) + [c for c in cands if c not in an]
     if not st:
         # адреса без назви вулиці: беремо найближчі вулиці, але лише якщо номер будинку є рівно на одній з них
         # найближча вулиця з таким номером приймається, якщо вона перша в списку; інакше лише за однозначності
@@ -244,6 +260,8 @@ def take_street(la, lo, rem, sp, k, osm_name=""):
 def street_names(name, old): return [name] + [o for o in re.split(r"[;,]", old) if o.strip()]
 for la, lo, name, old in street_rows:
     cands = candidates(la, lo); done = False
+    an = [x for x in anchored(la, lo, 0.4) if x in zt]
+    if an: cands = sorted(an) + [c for c in cands if c not in an]
     for nm in street_names(name, old):
         sk = street_key(nm)
         for rem, sp in cands[:3]:
