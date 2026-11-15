@@ -175,9 +175,11 @@ def anchored(la, lo, r=0.8):
     return out
 
 stats = Counter(); house_rows = []; cells = defaultdict(list); matched_houses = set(); seen = set(); street_hit = set()
-def take_house(la, lo, rem, sp, k, hk, hn, codes):
+mh = []   # знайдені будинки: (lat, lon, ключ вулиці в OSM, rem, sp, k, коди)
+def take_house(la, lo, rem, sp, k, hk, hn, codes, osk=None):
     key = (rem, sp, k, hk, round(la, 4), round(lo, 4))
     if key in seen: return
+    mh.append((la, lo, osk or k, rem, sp, k, "|".join(collapse(codes))))
     seen.add(key); matched_houses.add((rem, sp, k, hk)); stats["matched"] += 1
     house_rows.append((la, lo, rem, sp, k, hk, hn.strip(), "|".join(collapse(codes))))
 
@@ -211,7 +213,7 @@ for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
     for rem, sp in cands:
         m = zt[(rem, sp)]; k = find_street(m, sk, la, lo)
         if k is not None and hk in m[k]: hit = (rem, sp, k, m[k][hk]); break
-    if hit: take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3])
+    if hit: take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3], sk)
     else: pend_h.append((la, lo, hn, sk, hk, tuple(cands)))
 
 def ext_house(la, lo, sk, hk, pool):
@@ -221,16 +223,18 @@ def ext_house(la, lo, sk, hk, pool):
         if k is not None and hk in m[k]: hits.append((rem, sp, k, m[k][hk]))
     return hits[0] if len(hits) == 1 else None
 
-rest = []
+rest = []; unm = []
 for la, lo, hn, sk, hk, cands in pend_h:          # прохід А: рідкісні назви вулиць
     hit = ext_house(la, lo, sk, hk, ext_cands(la, lo, cands)) if freq[sk[1]] <= COMMON else None
     if hit:
-        take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3]); add_anchor(la, lo, hit[0], hit[1]); stats["ext_house"] += 1
+        take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3], sk); add_anchor(la, lo, hit[0], hit[1]); stats["ext_house"] += 1
     else: rest.append((la, lo, hn, sk, hk, cands))
 
 # рівень вулиці: відрізки доріг з назвою
 sseen = set(); pend_s = []
-def take_street(la, lo, rem, sp, k):
+smatch = defaultdict(list)   # клітинка 0.01 градуса -> [(lat, lon, назва в OSM, rem, sp, k)]
+def take_street(la, lo, rem, sp, k, osm_name=""):
+    if osm_name: smatch[(int(la * 100), int(lo * 100))].append((la, lo, street_key(osm_name), rem, sp, k))
     key = (rem, sp, k, round(la, 3), round(lo * 0.65, 3))
     if key in sseen: return
     sseen.add(key); street_hit.add((rem, sp, k)); stats["street_pts"] += 1
@@ -244,7 +248,7 @@ for la, lo, name, old in street_rows:
         sk = street_key(nm)
         for rem, sp in cands[:3]:
             k = find_street(zt[(rem, sp)], sk, la, lo)
-            if k is not None: take_street(la, lo, rem, sp, k); done = True; break
+            if k is not None: take_street(la, lo, rem, sp, k, name); done = True; break
         if done: break
     if not done: pend_s.append((la, lo, name, old, tuple(cands)))
 
@@ -256,20 +260,20 @@ for la, lo, name, old, cands in pend_s:           # прохід А для ву�
         if freq[sk[1]] > COMMON: continue
         hits = [(rem, sp, k) for rem, sp in ext_cands(la, lo, cands) for k in [find_street(zt[(rem, sp)], sk, la, lo, fuzzy=True)] if k is not None]
         if len(hits) == 1:
-            take_street(la, lo, *hits[0]); add_anchor(la, lo, hits[0][0], hits[0][1]); stats["ext_street"] += 1; done = True; break
+            take_street(la, lo, *hits[0], name); add_anchor(la, lo, hits[0][0], hits[0][1]); stats["ext_street"] += 1; done = True; break
     if not done: rest_s.append((la, lo, name, old, cands))
 
 for la, lo, hn, sk, hk, cands in rest:            # прохід Б: поширені назви поруч із уже знайденими сусідами
     hit = ext_house(la, lo, sk, hk, anchored(la, lo) - set(cands))
-    if hit: take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3]); stats["anchor_house"] += 1
-    else: stats["house_unmatched"] += 1
+    if hit: take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3], sk); stats["anchor_house"] += 1
+    else: stats["house_unmatched"] += 1; unm.append((la, lo, hn, sk, hk, cands))
 for la, lo, name, old, cands in rest_s:
     pool = anchored(la, lo) - set(cands)
     if not pool: continue
     for nm in street_names(name, old):
         sk = street_key(nm)
         hits = [(rem, sp, k) for rem, sp in pool for k in [find_street(zt[(rem, sp)], sk, la, lo)] if k is not None]
-        if len(hits) == 1: take_street(la, lo, *hits[0]); stats["anchor_street"] += 1; break
+        if len(hits) == 1: take_street(la, lo, *hits[0], name); stats["anchor_street"] += 1; break
 
 # та сама адреса у далеких одна від одної точках: лишаємо найближчу до центру свого населеного пункту
 center = {(p[3], p[4]): (p[0], p[1]) for p in plist}
@@ -287,7 +291,86 @@ for key, rows in groups.items():
     for la, lo, rem, sp, k, hk, hn, codes in rows:
         cells[(math.floor(la * 10), math.floor(lo * 10))].append((la, lo, rem, sp, disp[(rem, sp, k)], hn, codes))
 
+# ---------- будинки, яких немає в базі або які не мають номера на карті: підчерга за вулицею ----------
+# Беремо лише однозначні випадки: уся вулиця в одній підчерзі або щонайменше три відомі сусіди
+# на цій самій вулиці (до 100 м) в одній підчерзі. Такі рядки в плитці мають позначку «приблизно».
+hgrid = defaultdict(list)
+for h in mh: hgrid[(int(h[0] * 400), int(h[1] * 250))].append(h)
+def houses_near(la, lo, r):
+    n = int(r / 0.25) + 1
+    for dy in range(-n, n + 1):
+        for dx in range(-n, n + 1):
+            for h in hgrid.get((int(la * 400) + dy, int(lo * 250) + dx), ()):
+                if dist(la, lo, h[0], h[1]) <= r: yield h
+def resolve(sk, la, lo, cands):
+    """Вулиця бази для вулиці з OSM у цій точці або None, якщо неоднозначно."""
+    g = {(h[3], h[4], h[5]) for h in houses_near(la, lo, 0.4) if h[2] == sk}
+    if len(g) == 1: return next(iter(g))
+    if len(g) > 1: return None
+    g = set()
+    for rem, sp in list(cands[:3]) + list(anchored(la, lo)):
+        k = find_street(zt[(rem, sp)], sk, la, lo, fuzzy=False)
+        if k is not None: g.add((rem, sp, k))
+    if len(g) == 1: return next(iter(g))
+    if len(g) > 1: return None
+    best = None; bd = 1.5
+    for dy in (-2, -1, 0, 1, 2):
+        for dx in (-3, -2, -1, 0, 1, 2, 3):
+            for q in smatch.get((int(la * 100) + dy, int(lo * 100) + dx), ()):
+                if q[2] != sk: continue
+                d = dist(la, lo, q[0], q[1])
+                if d < bd: bd = d; best = q[3:]
+    return best
+scode = {}
+def code_for(s, la, lo):
+    if s not in scode: scode[s] = collapse([c for cs in zt[(s[0], s[1])][s[2]].values() for c in cs])
+    if len(scode[s]) == 1: return scode[s][0]
+    cs = [h[6] for h in houses_near(la, lo, 0.1) if (h[3], h[4], h[5]) == s]
+    if len(cs) >= 3 and len(set(cs)) == 1 and "|" not in cs[0]: return cs[0]
+    return None
+icells = defaultdict(list)
+# а) адреса є на карті, але такого номера немає в базі
+inf_h = defaultdict(list)
+for la, lo, hn, sk, hk, cands in unm:
+    s = resolve(sk, la, lo, cands)
+    if not s: continue
+    m = zt[(s[0], s[1])][s[2]]
+    if hk in m:                                        # номер знайшовся в іншому населеному пункті: це точна адреса
+        key = (s[0], s[1], s[2], hk)
+        if key not in matched_houses:
+            matched_houses.add(key); stats["late_house"] += 1
+            cells[(math.floor(la * 10), math.floor(lo * 10))].append((la, lo, s[0], s[1], disp[s], hn.strip(), "|".join(collapse(m[hk]))))
+        continue
+    c = code_for(s, la, lo)
+    if c is None: stats["addr_unknown"] += 1; continue
+    inf_h[(s, hk)].append((la, lo, hn.strip(), c, polyof.get((la, lo, hn.strip()), "")))
+for (s, hk), rows in inf_h.items():
+    wp = [r for r in rows if r[4]]; pd = set()
+    for la, lo, hn, c, poly in (wp or rows[:1]):
+        if poly in pd and poly: continue
+        pd.add(poly); stats["addr_painted"] += 1
+        icells[(math.floor(la * 10), math.floor(lo * 10))].append((la, lo, s[0], s[1], disp[s], hn, c, poly))
+# б) будівля без номера на карті: за найближчою вулицею
+if os.path.exists(f"{D}/osm/bld.tsv.gz"):
+    for ln in gzip.open(f"{D}/osm/bld.tsv.gz", "rt", encoding="utf-8"):
+        la, lo, poly, near = ln.rstrip("\n").split("\t"); la = float(la); lo = float(lo); stats["bld"] += 1
+        near = [(street_key(x.rsplit(":", 1)[0]), float(x.rsplit(":", 1)[1])) for x in near.split("|")]
+        d1 = near[0][1]
+        if d1 > 60 or not poly: continue
+        cands = candidates(la, lo)
+        s1 = resolve(near[0][0], la, lo, cands)
+        c1 = code_for(s1, la, lo) if s1 else None
+        if c1 is None: stats["bld_unknown"] += 1; continue
+        ok = True
+        for sk2, d in near[1:]:
+            if d > max(d1 + 12, d1 * 1.5): continue
+            s2 = resolve(sk2, la, lo, cands)
+            if s2 and code_for(s2, la, lo) != c1: ok = False; break
+        if not ok: stats["bld_ambiguous"] += 1; continue
+        icells[(math.floor(la * 10), math.floor(lo * 10))].append((la, lo, s1[0], s1[1], disp[s1], "", c1, poly)); stats["bld_painted"] += 1
+
 # ---------- запис плиток ----------
+for k in icells: cells.setdefault(k, [])
 out = f"{D}/pts"; os.makedirs(out, exist_ok=True)
 for f in os.listdir(out): os.remove(f"{out}/{f}")
 keys = []
@@ -309,6 +392,11 @@ for (cy, cx), pts in sorted(cells.items()):
             if (sk, hn, poly) in pdone: continue      # та сама будівля двічі (точка адреси і сама будівля)
             pdone.add((sk, hn, poly)); row.append([int(x) for x in poly.split(",")]); stats["with_outline"] += 1
         P.append(row)
+    for la, lo, rem, sp, st, hn, code, poly in sorted(icells.get((cy, cx), ())):
+        if (rem, sp) not in nidx: nidx[(rem, sp)] = len(names); names.append([rem, sp])
+        sk = (nidx[(rem, sp)], st)
+        if sk not in sidx: sidx[sk] = len(streets); streets.append([nidx[(rem, sp)], st])
+        P.append([round(la * 1e5) - la0, round(lo * 1e5) - lo0, sidx[sk], hn, code, [int(x) for x in poly.split(",")] if poly else 0, 1])
     k = f"{cy}_{cx}"; keys.append(k)
     json.dump({"o": [la0, lo0], "n": names, "s": streets, "p": P}, open(f"{out}/{k}.json", "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
