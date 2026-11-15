@@ -133,7 +133,7 @@ with gzip.open(f"{out}/addr.tsv.gz", "wt", encoding="utf-8") as fa, \
                     for gy in (-1, 0, 1):
                         for gx in (-1, 0, 1):
                             for r in grid.get((int(lat / G) + gy, int(lon / G) + gx), ()):
-                                if r in used or r not in btype: continue
+                                if abs(r[0][1] - lat) > 0.0006 or abs(r[0][0] - lon) > 0.001 or r in used or r not in btype: continue
                                 d = min(seg_dist(lat, lon, (r[i][1], r[i][0], r[i + 1][1], r[i + 1][0])) for i in range(len(r) - 1))
                                 if d < best: best = d; ring = r
                     if ring is not None: used.add(ring); nsnap += 1
