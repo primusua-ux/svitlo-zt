@@ -275,7 +275,7 @@ a{color:var(--accent)}
   <label for="repText">Що не так?</label>
   <textarea id="repText" placeholder="Наприклад: у мене підчерга 4.1, а сайт показує 3.2. Або: будинок не той."></textarea>
   <button class="btnp" id="repSend">Надіслати</button>
-  <p class="empty">Відкриється сторінка для відправлення повідомлення розробнику з уже заповненою адресою. Ваші контакти без вашої згоди не передаються.</p>
+  <p class="empty">Відкриється ваша поштова програма з готовим листом розробнику (primus.ua@gmail.com), адреса вже заповнена. Можна також написати в <a href="https://t.me/primus_ua" target="_blank" rel="noopener">Telegram</a>.</p>
 </div>
 
 <div class="panel about" id="about">
@@ -318,7 +318,7 @@ a{color:var(--accent)}
   <p>Графік діє, коли «Укренерго» застосовує обмеження. Під час обласних аварійних відключень графік не застосовується, про це попередить червоний банер угорі.</p>
   <p>Сайт збирає лише знеособлену статистику відвідувань (сервіс Umami, без cookie): кількість переглядів і натискань на кнопки. Адреси, які ви шукаєте чи торкаєтесь, не передаються.</p>
   <p>Карта і координати будинків: © учасники <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Сторінка неофіційна, можливі неточності у визначенні адреси.</p>
-  <div class="psfoot">© 2026 Приймачук О. В.<span class="sep">|</span>Розробка та підтримка<span class="sep">|</span><a href="https://t.me/primus_ua" target="_blank" rel="noopener">Зв'язок у Telegram</a></div>
+  <div class="psfoot">© 2026 Приймачук О. В.<span class="sep">|</span>Розробка та підтримка<span class="sep">|</span><a href="https://t.me/primus_ua" target="_blank" rel="noopener">Зв'язок у Telegram</a><span class="sep">·</span><a href="mailto:primus.ua@gmail.com">Email</a></div>
 </div>
 
 <script src="vendor/leaflet/leaflet.js"></script>
@@ -767,7 +767,7 @@ function openQueue(q,quiet){
 }
 
 /* ---------- повідомити про помилку ---------- */
-var REPORT_URL="https://github.com/primusua-ux/svitlo-zt/issues/new";
+var REPORT_MAIL="primus.ua@gmail.com";
 var repAddr=null;
 function openReport(r){
   repAddr=r; $("repAddr").textContent="Адреса: "+(r.st?r.sp+", "+r.st+(r.h?", "+r.h:""):r.sp)+" · на сайті: підчерга "+r.codes.map(function(c){return c.replace("ю"," (нежитлові)")}).join(", ");
@@ -776,7 +776,7 @@ function openReport(r){
 $("repSend").onclick=function(){
   var r=repAddr; if(!r) return;
   var body="Адреса: "+[r.sp,r.st,r.h].filter(Boolean).join(", ")+"\nРЕМ: "+r.rem+"\nНа сайті: "+r.codes.join(", ")+(r.lat!=null?"\nКоординати: "+r.lat.toFixed(5)+", "+r.lon.toFixed(5):"")+"\n\nЩо не так:\n"+$("repText").value;
-  open(REPORT_URL+"?title="+encodeURIComponent("Помилка: "+[r.st,r.h].filter(Boolean).join(", ")+" ("+r.sp+")")+"&body="+encodeURIComponent(body),"_blank","noopener");
+  location.href="mailto:"+REPORT_MAIL+"?subject="+encodeURIComponent("Світло є? Помилка: "+[r.st,r.h].filter(Boolean).join(", ")+" ("+r.sp+")")+"&body="+encodeURIComponent(body);
   $("reportP").classList.remove("open");
 };
 
