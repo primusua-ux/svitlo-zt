@@ -91,9 +91,10 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
 .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 8px}
 .close{position:absolute;right:8px;top:8px;width:40px;height:40px;border:0;background:none;color:var(--muted);font-size:24px;cursor:pointer}
 .addr{font-size:15px;color:var(--muted);padding-right:36px}
-#sheetClose{width:auto;height:34px;top:10px;right:10px;padding:0 10px 0 14px;border-radius:17px;border:1px solid var(--line);background:var(--panel2);color:var(--text);
+.close{width:auto;height:34px;top:10px;right:10px;padding:0 10px 0 14px;border-radius:17px;border:1px solid var(--line);background:var(--panel2);color:var(--text);
   font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;line-height:1}
-#sheetClose span{font-size:20px;line-height:1;margin-top:-2px;color:var(--muted)}
+.close span,.barclose span{font-size:20px;line-height:1;margin-top:-2px;color:var(--muted)}
+.mapbar .tl .barclose{display:flex;align-items:center;gap:5px;padding:0 8px 0 10px}
 .sheet .addr{padding-right:112px}
 .addr b{color:var(--text);font-weight:600}
 .note{font-size:13px;color:var(--accent);margin-top:2px}
@@ -124,7 +125,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
 .panel{position:fixed;inset:0;z-index:700;background:var(--bg);display:none;flex-direction:column;
   padding:calc(10px + var(--safe-t)) 14px calc(14px + var(--safe-b));overflow:auto}
 .panel.open{display:flex}
-.panel h3{margin:4px 0 12px;font-size:20px;padding-right:44px}
+.panel h3{margin:4px 0 12px;font-size:20px;padding-right:112px}
 .panel label{font-size:13px;color:var(--muted);margin:10px 0 4px;display:block}
 .panel select,.panel input{width:100%;height:48px;border-radius:12px;border:1px solid var(--line);background:var(--panel);
   color:var(--text);font-size:16px;padding:0 12px}
@@ -217,12 +218,12 @@ a{color:var(--accent)}
 <div class="gav" id="gav"></div>
 <div class="mapbar" id="mapbar">
   <div id="timeBox" hidden>
-    <div class="tl"><b id="timeLbl">Карта на 12:00</b><button id="timeNow">Зараз</button><button id="timeClose" aria-label="Закрити">×</button></div>
+    <div class="tl"><b id="timeLbl">Карта на 12:00</b><button id="timeNow">Зараз</button><button id="timeClose" class="barclose" aria-label="Закрити">Закрити<span aria-hidden="true">×</span></button></div>
     <input type="range" id="timeR" min="0" max="47" step="1" value="24" aria-label="Час">
     <div class="blab" id="timeTicks"></div>
   </div>
   <div id="qBox" hidden>
-    <div class="tl"><b>Підчерги на карті</b><button id="qClose" aria-label="Закрити">×</button></div>
+    <div class="tl"><b>Підчерги на карті</b><button id="qClose" class="barclose" aria-label="Закрити">Закрити<span aria-hidden="true">×</span></button></div>
     <div class="qleg" id="qLeg"></div>
   </div>
 </div>
@@ -235,7 +236,7 @@ a{color:var(--accent)}
 </div>
 
 <div class="panel" id="search">
-  <button class="close" data-close="search" aria-label="Закрити">×</button>
+  <button class="close" data-close="search" aria-label="Закрити">Закрити<span aria-hidden="true">×</span></button>
   <h3>Пошук за адресою</h3>
   <label for="selRem">Район електромереж (РЕМ)</label>
   <select id="selRem"><option value="">Оберіть РЕМ</option></select>
@@ -250,7 +251,7 @@ a{color:var(--accent)}
 </div>
 
 <div class="panel" id="accP">
-  <button class="close" data-close="accP" aria-label="Закрити">×</button>
+  <button class="close" data-close="accP" aria-label="Закрити">Закрити<span aria-hidden="true">×</span></button>
   <h3>Де аварії</h3>
   <div class="tabs"><button id="tabAcc" class="on">Аварії</button><button id="tabPlan">Планові роботи</button></div>
   <input id="accFilter" placeholder="Фільтр: населений пункт або вулиця" autocomplete="off">
@@ -259,20 +260,20 @@ a{color:var(--accent)}
 </div>
 
 <div class="panel" id="homesP">
-  <button class="close" data-close="homesP" aria-label="Закрити">×</button>
+  <button class="close" data-close="homesP" aria-label="Закрити">Закрити<span aria-hidden="true">×</span></button>
   <h3>Мої адреси</h3>
   <div id="homesList"></div>
   <p class="empty">Щоб додати адресу, торкніться будинку на карті або знайдіть його через пошук і натисніть «Зберегти». Перша адреса відкриватиметься одразу, коли ви заходите на сайт.</p>
 </div>
 
 <div class="panel" id="queueP">
-  <button class="close" data-close="queueP" aria-label="Закрити">×</button>
+  <button class="close" data-close="queueP" aria-label="Закрити">Закрити<span aria-hidden="true">×</span></button>
   <h3 id="qTitle">Підчерга</h3>
   <div id="qBody"></div>
 </div>
 
 <div class="panel about" id="about">
-  <button class="close" data-close="about" aria-label="Закрити">×</button>
+  <button class="close" data-close="about" aria-label="Закрити">Закрити<span aria-hidden="true">×</span></button>
   <h3>Допомога</h3>
   <h4>Як користуватись</h4>
   <ol>
