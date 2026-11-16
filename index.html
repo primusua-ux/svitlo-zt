@@ -157,7 +157,6 @@ a{color:var(--accent)}
 .actions button svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .actions button.saved{border-color:var(--accent);color:var(--accent)}
 .actions button.saved svg{fill:var(--accent)}
-.actions .small{flex:1 0 100%;height:32px;border:0;background:none;color:var(--muted);font-size:13px;text-decoration:underline}
 .tag.q{cursor:pointer;border:1px solid var(--line)}
 .day{margin-top:14px;font-size:13px;color:var(--muted);font-weight:600}
 .hist{margin-top:10px;font-size:14px;color:var(--muted)}
@@ -266,16 +265,6 @@ a{color:var(--accent)}
   <button class="close" data-close="queueP" aria-label="Закрити">×</button>
   <h3 id="qTitle">Підчерга</h3>
   <div id="qBody"></div>
-</div>
-
-<div class="panel" id="reportP">
-  <button class="close" data-close="reportP" aria-label="Закрити">×</button>
-  <h3>Повідомити про помилку</h3>
-  <p class="empty" id="repAddr"></p>
-  <label for="repText">Що не так?</label>
-  <textarea id="repText" placeholder="Наприклад: у мене підчерга 4.1, а сайт показує 3.2. Або: будинок не той."></textarea>
-  <button class="btnp" id="repSend">Надіслати</button>
-  <p class="empty">Відкриється ваша поштова програма з готовим листом розробнику, адреса вже заповнена. Можна також написати в <a href="https://t.me/primus_ua" target="_blank" rel="noopener">Telegram</a>.</p>
 </div>
 
 <div class="panel about" id="about">
@@ -654,14 +643,12 @@ function showResult(r,quiet){
   if(OUT&&OUT.gav&&OUT.gav.active&&outFresh()) html+='<div class="alert fact"><b>Діють аварійні відключення по області</b>Графік нижче зараз може не застосовуватися.</div>';
   var sv=isHome(r);
   html+='<div class="actions"><button id="aSave" class="'+(sv?"saved":"")+'"><svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>'+(sv?"Збережено":"Зберегти")+'</button>'+
-    '<button id="aShare"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Поділитися</button>'+
-    '<button id="aErr" class="small" aria-label="Повідомити про помилку">Тут помилка?</button></div>';
+    '<button id="aShare"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Поділитися</button>'+'</div>';
   html+='<div class="foot">Графік діє, коли «Укренерго» застосовує обмеження. '+(outFresh()?"Аварії та ремонти: дані обленерго на "+fmtT(OUT.updated)+". ":"Оперативні дані про аварії зараз недоступні. ")+'<a href="#" id="toAbout">Докладніше</a></div>';
   openSheet(html);
   $("toAbout").onclick=function(e){e.preventDefault();openPanel("about")};
   $("aSave").onclick=function(){toggleHome(r)};
   $("aShare").onclick=function(){shareAddr(r)};
-  $("aErr").onclick=function(){openReport(r)};
   Array.prototype.forEach.call($("sheetBody").querySelectorAll(".tag.q"),function(t){t.onclick=function(){openQueue(t.dataset.q)}});
 }
 
@@ -766,21 +753,9 @@ function openQueue(q,quiet){
   $("qShare").onclick=function(){doShare("Світло є? Підчерга "+q,"Графік відключень підчерги "+q+" (Житомиробленерго)",baseUrl()+"#q="+q);track("Поділитися підчергою")};
 }
 
-/* ---------- повідомити про помилку ---------- */
 // адреса пошти складається лише в момент натискання, щоб її не знаходили боти, які сканують сторінки
 function mailTo(){return ["ua","primus"].reverse().join(".")+String.fromCharCode(64)+["gmail","com"].join(".")}
 $("mailLink").onclick=function(e){e.preventDefault();track("Email");location.href="mailto:"+mailTo()};
-var repAddr=null;
-function openReport(r){
-  repAddr=r; $("repAddr").textContent="Адреса: "+(r.st?r.sp+", "+r.st+(r.h?", "+r.h:""):r.sp)+" · на сайті: підчерга "+r.codes.map(function(c){return c.replace("ю"," (нежитлові)")}).join(", ");
-  $("repText").value=""; openPanel("reportP"); track("Повідомити про помилку");
-}
-$("repSend").onclick=function(){
-  var r=repAddr; if(!r) return;
-  var body="Адреса: "+[r.sp,r.st,r.h].filter(Boolean).join(", ")+"\nРЕМ: "+r.rem+"\nНа сайті: "+r.codes.join(", ")+(r.lat!=null?"\nКоординати: "+r.lat.toFixed(5)+", "+r.lon.toFixed(5):"")+"\n\nЩо не так:\n"+$("repText").value;
-  location.href="mailto:"+mailTo()+"?subject="+encodeURIComponent("Світло є? Помилка: "+[r.st,r.h].filter(Boolean).join(", ")+" ("+r.sp+")")+"&body="+encodeURIComponent(body);
-  $("reportP").classList.remove("open");
-};
 
 /* ---------- режими карти: підчерги та інший час ---------- */
 function syncBar(){
