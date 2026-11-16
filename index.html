@@ -590,7 +590,8 @@ function entryHtml(code,multi){
   }
   var today=kyivNow().date, tom=gridDay(ci.q,1), cdTxt="";
   if(fresh){
-    var mins=j*30-now.min;
+    // до кінця доби стан не змінюється: без графіка на завтра невідомо, що буде опівночі, тож відліку немає
+    var mins=j<48?j*30-now.min:0;
     if(j>=48&&tom){ var c2=tom.charAt(0), k=0; if(c2===cur){ while(k<48&&tom.charAt(k)===cur) k++; } mins=(48-slot)*30-(now.min-slot*30)+k*30;
       if(k<48){ until=(cur==="1"?"Світло має з'явитися завтра о ":"Наступне відключення завтра о ")+hm(k) } else mins=0 }
     if(mins>0) cdTxt=(cur==="1"?"увімкнуть через ":"вимкнуть через ")+dur(mins);
