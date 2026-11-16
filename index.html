@@ -21,6 +21,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Світло є?">
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css">
 <style>
 :root{
   --bg:#14181f; --panel:#1c222b; --panel2:#252d38; --line:#333d4a;
@@ -317,11 +318,13 @@ a{color:var(--accent)}
   <p>Графік і черги: <a href="https://www.ztoe.com.ua/unhooking-search.php" target="_blank" rel="noopener">АТ «Житомиробленерго»</a>. Аварії, ремонти і фактичний стан черг: сервіс обленерго <a href="https://ztoe-poweron.inneti.net/" target="_blank" rel="noopener">«Чому немає світла?»</a>. Дані оновлюються кожні 15 хвилин, а після перемикання черг можуть запізнюватися до пів години.</p>
   <p>Графік діє, коли «Укренерго» застосовує обмеження. Під час обласних аварійних відключень графік не застосовується, про це попередить червоний банер угорі.</p>
   <p>Сайт збирає лише знеособлену статистику відвідувань (сервіс Umami, без cookie): кількість переглядів і натискань на кнопки. Адреси, які ви шукаєте чи торкаєтесь, не передаються.</p>
-  <p>Карта і координати будинків: © учасники <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Сторінка неофіційна, можливі неточності у визначенні адреси.</p>
+  <p>Карта: <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> на даних <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Координати будинків: © учасники OpenStreetMap. Сторінка неофіційна, можливі неточності у визначенні адреси.</p>
   <div class="psfoot">© 2026 Oleh Pryimachuk<span class="sep">|</span>Розробка та підтримка<span class="sep">|</span><a href="https://t.me/primus_ua" target="_blank" rel="noopener">Зв'язок у Telegram</a><span class="sep">·</span><a href="#" id="mailLink">Email</a></div>
 </div>
 
 <script src="vendor/leaflet/leaflet.js"></script>
+<script src="vendor/maplibre/maplibre-gl.js"></script>
+<script src="vendor/maplibre/leaflet-maplibre-gl.js"></script>
 <script>
 (function(){
 "use strict";
@@ -427,8 +430,33 @@ function intervals(row){var out=[],s=-1;for(var i=0;i<=48;i++){var x=i<48&&row.c
 
 /* ---------- карта ---------- */
 var map=L.map("map",{zoomControl:false,attributionControl:true,tap:false,preferCanvas:true}).setView([50.2547,28.6587],13);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+// Підкладка: векторна карта OpenFreeMap (завжди світла). Якщо WebGL чи сервіс недоступні, звичайні плитки OpenStreetMap.
+var OSM_ATTR='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', base=null, baseKey="";
+function rasterBase(){
+  if(base) map.removeLayer(base); baseKey="raster";
+  base=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:OSM_ATTR}).addTo(map);
+}
+function setBase(){
+  var key="liberty";   // карта завжди світла, незалежно від теми інтерфейсу: темний стиль автору не сподобався
+  if(baseKey===key||baseKey==="raster") return;
+  if(!(window.maplibregl&&L.maplibreGL)){ rasterBase(); return }
+  try{
+    var layer=L.maplibreGL({style:"https://tiles.openfreemap.org/styles/"+key,attribution:'<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> '+OSM_ATTR}).addTo(map);
+    var gl=layer.getMaplibreMap(), ok=false;
+    gl.once("load",function(){
+      ok=true;
+      // підписи лише українською (стиль за замовчуванням дублює їх латинкою)
+      try{ gl.getStyle().layers.forEach(function(l){
+        var tf=l.type==="symbol"&&l.layout&&l.layout["text-field"], t=tf?JSON.stringify(tf):"";
+        if(t.indexOf("name")>=0&&t.indexOf("ref")<0&&t.indexOf("housenumber")<0) gl.setLayoutProperty(l.id,"text-field",["coalesce",["get","name:uk"],["get","name"]]);
+      }) }catch(e){ console.warn("підписи карти:",e&&e.message) }
+    });
+    setTimeout(function(){ if(!ok&&base===layer){ console.warn("векторна карта не завантажилась, перемикаюсь на плитки OpenStreetMap"); rasterBase() } },10000);
+    if(base) map.removeLayer(base); base=layer; baseKey=key;
+  }catch(e){ console.warn("векторна карта недоступна:",e&&e.message); rasterBase() }
+}
 map.attributionControl.setPrefix(false);
+setBase();
 window.svitloMap=map;
 var dots=L.layerGroup().addTo(map), pin=null, lastResult=null, renderer=L.canvas({padding:.3});
 
