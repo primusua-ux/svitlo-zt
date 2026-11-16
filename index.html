@@ -33,6 +33,8 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
   font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overscroll-behavior:none}
 #map{position:fixed;inset:0;background:#dfe5ea;z-index:0}
 .leaflet-control-attribution{font-size:10px}
+.hn{position:absolute;transform:translate(-50%,-50%);font:600 10px/1 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#10141a;white-space:nowrap;pointer-events:none;
+  text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff}
 .topbar{position:fixed;left:0;right:0;top:0;z-index:500;padding:calc(8px + var(--safe-t)) 10px 0;
   display:flex;gap:8px;align-items:flex-start;pointer-events:none}
 .brand{pointer-events:auto;background:var(--panel);border-radius:14px;padding:8px 12px;flex:1;min-width:0;
@@ -458,10 +460,11 @@ function setBase(){
 map.attributionControl.setPrefix(false);
 setBase();
 window.svitloMap=map;
-var dots=L.layerGroup().addTo(map), pin=null, lastResult=null, renderer=L.canvas({padding:.3});
+var dots=L.layerGroup().addTo(map), nums=L.layerGroup().addTo(map), pin=null, lastResult=null, renderer=L.canvas({padding:.3});
 
 function ring(lat,lon,a){var r=[];for(var i=0;i<a.length;i+=2)r.push([lat+a[i]/1e6,lon+a[i+1]/1e6]);return r}
 function inRing(lat,lon,r){var c=false;for(var i=0,j=r.length-1;i<r.length;j=i++){var yi=r[i][0],xi=r[i][1],yj=r[j][0],xj=r[j][1];if((yi>lat)!==(yj>lat)&&lon<(xj-xi)*(lat-yi)/(yj-yi)+xi)c=!c}return c}
+function polyCenter(r){var a=0,b=0;for(var i=0;i<r.length;i++){a+=r[i][0];b+=r[i][1]}return [a/r.length,b/r.length]}
 function cellKey(lat,lon){return Math.floor(lat*TS)+"_"+Math.floor(lon*TS)}
 function ring2(lat,lon,a){var r=[],y=Math.round(lat*1e5),x=Math.round(lon*1e5);for(var i=0;i<a.length;i+=2){y+=a[i];x+=a[i+1];r.push([y/1e5,x/1e5])}return r}
 function loadCell(k){
@@ -480,11 +483,11 @@ function cellsAround(lat,lon,pad){
 function distM(a,b,c,d){var x=(d-b)*Math.cos((a+c)/2*Math.PI/180)*111320,y=(c-a)*110540;return Math.sqrt(x*x+y*y)}
 
 function redrawDots(){
-  dots.clearLayers();
+  dots.clearLayers(); nums.clearLayers();
   if(map.getZoom()<16||!CELLS) return;
   var b=map.getBounds().pad(.15), c=map.getCenter();
   cellsAround(c.lat,c.lng,Math.max(b.getNorth()-b.getSouth(),.002)/2).then(function(cells){
-    dots.clearLayers(); var n=0, drawn={};
+    dots.clearLayers(); nums.clearLayers(); var n=0, drawn={}, nl=0, lab=map.getZoom()>=18, vb=map.getBounds();
     cells.forEach(function(cell){cell.pts.forEach(function(p){
       if((!p.h&&!p.poly)||n>7000||!b.contains([p.lat,p.lon])) return; n++;
       var q0=codeInfo(p.codes[0]).q, st, col;
@@ -499,6 +502,9 @@ function redrawDots(){
       if(p.poly){var pk=p.poly[0][0].toFixed(6)+p.poly[0][1].toFixed(6)+p.poly.length; if(drawn[pk]) return; drawn[pk]=1}
       if(p.poly) L.polygon(p.poly,{renderer:renderer,weight:1,color:st==="q"?"rgba(0,0,0,.45)":st==="off"?"#b3302e":st==="on"?"#1f8a48":st==="acc"?"#b06f05":st==="plan"?"#4a57c9":"#445",fillColor:col,fillOpacity:p.inf?.55:.8,interactive:false}).addTo(dots);
       else L.circleMarker([p.lat,p.lon],{renderer:renderer,radius:map.getZoom()>=18?6:4,weight:1,color:"#fff",opacity:p.inf?.6:1,fillOpacity:p.inf?.6:.95,fillColor:col,interactive:false}).addTo(dots);
+      // номери будинків поверх зафарбованих контурів (лише зблизька, як у svitlo-od)
+      if(lab&&p.h&&nl<350&&vb.contains([p.lat,p.lon])){ nl++; var cc=p.poly?polyCenter(p.poly):[p.lat,p.lon];
+        L.marker(cc,{interactive:false,keyboard:false,icon:L.divIcon({className:"",iconSize:[0,0],html:'<div class="hn">'+esc(p.h)+'</div>'})}).addTo(nums) }
     })});
   });
 }
