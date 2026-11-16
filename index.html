@@ -33,7 +33,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
   font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overscroll-behavior:none}
 #map{position:fixed;inset:0;background:#dfe5ea;z-index:0}
 .leaflet-control-attribution{font-size:10px}
-.hn{position:absolute;transform:translate(-50%,-50%);font:600 20px/1 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#10141a;white-space:nowrap;pointer-events:none;
+.hn{position:absolute;transform:translate(-50%,-50%);font:600 16px/1 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#10141a;white-space:nowrap;pointer-events:none;
   text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 5px #fff}
 .topbar{position:fixed;left:0;right:0;top:0;z-index:500;padding:calc(8px + var(--safe-t)) 10px 0;
   display:flex;gap:8px;align-items:flex-start;pointer-events:none}
@@ -487,7 +487,7 @@ function redrawDots(){
   if(map.getZoom()<16||!CELLS) return;
   var b=map.getBounds().pad(.15), c=map.getCenter();
   cellsAround(c.lat,c.lng,Math.max(b.getNorth()-b.getSouth(),.002)/2).then(function(cells){
-    dots.clearLayers(); nums.clearLayers(); var n=0, drawn={}, nl=0, lab=map.getZoom()>=18, vb=map.getBounds();
+    dots.clearLayers(); nums.clearLayers(); var n=0, drawn={}, nl=0, lab=map.getZoom()>=16, vb=map.getBounds(), taken=[];
     cells.forEach(function(cell){cell.pts.forEach(function(p){
       if((!p.h&&!p.poly)||n>7000||!b.contains([p.lat,p.lon])) return; n++;
       var q0=codeInfo(p.codes[0]).q, st, col;
@@ -503,8 +503,12 @@ function redrawDots(){
       if(p.poly) L.polygon(p.poly,{renderer:renderer,weight:1,color:st==="q"?"rgba(0,0,0,.45)":st==="off"?"#b3302e":st==="on"?"#1f8a48":st==="acc"?"#b06f05":st==="plan"?"#4a57c9":"#445",fillColor:col,fillOpacity:p.inf?.55:.8,interactive:false}).addTo(dots);
       else L.circleMarker([p.lat,p.lon],{renderer:renderer,radius:map.getZoom()>=18?6:4,weight:1,color:"#fff",opacity:p.inf?.6:1,fillOpacity:p.inf?.6:.95,fillColor:col,interactive:false}).addTo(dots);
       // номери будинків поверх зафарбованих контурів (лише зблизька, як у svitlo-od)
-      if(lab&&p.h&&nl<350&&vb.contains([p.lat,p.lon])){ nl++; var cc=p.poly?polyCenter(p.poly):[p.lat,p.lon];
-        L.marker(cc,{interactive:false,keyboard:false,icon:L.divIcon({className:"",iconSize:[0,0],html:'<div class="hn">'+esc(p.h)+'</div>'})}).addTo(nums) }
+      if(lab&&p.h&&nl<350&&vb.contains([p.lat,p.lon])){ var cc=p.poly?polyCenter(p.poly):[p.lat,p.lon];
+        // на дрібних масштабах номери не мають налазити один на одного: пропускаємо той, що перекриває вже поставлений
+        var pt=map.latLngToContainerPoint(cc), hw=String(p.h).length*4.6+4, hh=10, hit=false;
+        for(var t=0;t<taken.length;t++){var o=taken[t]; if(Math.abs(o[0]-pt.x)<o[2]+hw&&Math.abs(o[1]-pt.y)<hh*2){hit=true;break}}
+        if(!hit){ taken.push([pt.x,pt.y,hw]); nl++;
+        L.marker(cc,{interactive:false,keyboard:false,icon:L.divIcon({className:"",iconSize:[0,0],html:'<div class="hn">'+esc(p.h)+'</div>'})}).addTo(nums) } }
     })});
   });
 }
