@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Публікує часто змінювані дані (графік + діючі відключення) у гілку `live` одним комітом без історії,
+"""Публікує часто змінювані дані (графік, діючі відключення, щогодинна статистика) у гілку `live` одним комітом без історії,
 щоб основна гілка не розросталась. Викликається з update_schedule.py."""
 import os, shutil, subprocess, sys, time
 here = os.path.dirname(os.path.abspath(__file__)); root = os.path.dirname(here)
@@ -34,6 +34,24 @@ except Exception as e:
 r = subprocess.run([sys.executable, os.path.join(here, "update_outages.py"), os.path.join(root, "data"), os.path.join(out, "outages.json.new")])
 if r.returncode == 0: os.replace(os.path.join(out, "outages.json.new"), os.path.join(out, "outages.json"))
 else: print("update_outages: помилка, лишаю попередні дані")
+
+# статистика для stats.html: перебудовується не частіше ніж раз на годину, інакше лишається попередня.
+# Будь-яка помилка тут не повинна зупинити публікацію графіка й аварій.
+try:
+    stats_old, stats_age = None, None
+    if git("rev-parse", "-q", "--verify", "FETCH_HEAD").returncode == 0:
+        old = subprocess.run(["git", "-C", root, "show", "FETCH_HEAD:stats.json"], capture_output=True)
+        if old.returncode == 0:
+            stats_old = old.stdout
+            try: stats_age = time.time() - json.loads(stats_old).get("generated", 0)
+            except ValueError: stats_age = None
+    if stats_age is None or stats_age >= 55 * 60:
+        r = subprocess.run([sys.executable, os.path.join(here, "build_stats.py"), os.path.join(root, "data"), out, os.path.join(out, "stats.json.new")])
+        if r.returncode == 0: os.replace(os.path.join(out, "stats.json.new"), os.path.join(out, "stats.json"))
+        else: print("build_stats: помилка, лишаю попередню статистику")
+    if not os.path.exists(os.path.join(out, "stats.json")) and stats_old: open(os.path.join(out, "stats.json"), "wb").write(stats_old)
+except Exception as e:
+    print("stats: помилка", e)
 
 entries = []
 for name in sorted(os.listdir(out)):

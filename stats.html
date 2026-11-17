@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14181f">
+<title>Статистика відключень Житомирщини · Світло є?</title>
+<meta name="description" content="Статистика відключень світла на Житомирщині: графік, фактичний стан підчерг, аварії й планові роботи Житомиробленерго за районами, населеними пунктами й підчергами. Оновлюється щогодини.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Статистика відключень Житомирщини">
+<meta property="og:description" content="Графік, аварії й планові роботи за районами, населеними пунктами й підчергами. Оновлюється щогодини.">
+<meta property="og:image" content="https://svitloe.net/og.png">
+<meta property="og:url" content="https://svitloe.net/stats.html">
+<link rel="canonical" href="https://svitloe.net/stats.html">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* тема як на карті: svitlo.theme = auto | dark | light */
+function applyTheme(){var t="auto";try{t=JSON.parse(localStorage.getItem("svitlo.theme"))||"auto"}catch(e){}
+  var dark=t==="dark"||(t==="auto"&&!(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches));
+  document.documentElement.setAttribute("data-theme",dark?"dark":"light");
+  document.querySelector('meta[name=theme-color]').content=dark?"#14181f":"#f2f4f7";}
+applyTheme();
+</script>
+<style>
+:root{--bg:#14181f;--panel:#1c222b;--panel2:#252d38;--line:#333d4a;--text:#eef2f6;--muted:#9aa7b5;
+  --on:#35c26b;--off:#f0524f;--accent:#f6c343;--acc:#f59e0b;--plan:#7c8aff;--grey:#6b7684;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+:root[data-theme=light]{--bg:#f2f4f7;--panel:#fff;--panel2:#e8ecf1;--line:#d3d9e1;--text:#14181f;--muted:#5a6676;--accent:#b7860b;--grey:#a9b2bd}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+a{color:inherit}
+.wrap{max-width:1100px;margin:0 auto;padding:0 12px calc(24px + var(--safe-b))}
+.top{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--safe-t)) 0 8px}
+.back{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:12px;background:var(--panel);text-decoration:none;font-size:14px;flex:none;border:1px solid var(--line)}
+.back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.top h1{font-size:18px;margin:0;line-height:1.2}
+.top h1 span{color:var(--accent)}
+.top small{display:block;color:var(--muted);font-size:12px}
+.top small.warn{color:var(--accent)}
+/* фільтри */
+.filters{z-index:20;background:var(--bg);margin:0 -12px;padding:8px 12px;border-bottom:1px solid var(--line)}
+@media (min-width:700px){.filters{position:sticky;top:0}}
+#toF{position:fixed;right:12px;bottom:calc(14px + var(--safe-b));z-index:30;height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.35);display:none}
+@media (max-width:699px){#toF.show{display:block}}
+#toF b{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:10px;background:var(--acc);color:#1a1205;font-size:12px;margin-left:6px;padding:0 5px}
+.frow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.frow+.frow{margin-top:8px}
+.filters select,.filters input[type=search]{height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:14px;padding:0 10px;min-width:0}
+.filters select{flex:1 1 150px;max-width:230px}
+.filters input[type=search]{flex:2 1 200px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:none}
+.seg button{height:36px;border:0;background:var(--panel);color:var(--muted);font:inherit;font-size:14px;padding:0 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--panel2);color:var(--text);font-weight:600}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+.chk input{width:18px;height:18px;accent-color:var(--acc)}
+.btn{height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:14px;padding:0 12px;cursor:pointer}
+.btn.home{border-color:var(--accent);color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 4px 0 10px;border-radius:14px;background:var(--panel2);font-size:13px;border:0;color:var(--text);cursor:pointer}
+.chip b{display:grid;place-items:center;width:20px;height:20px;border-radius:10px;background:var(--line);font-weight:400}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+/* вміст */
+section{margin-top:22px}
+h2{font-size:17px;margin:0 0 4px}
+h3{font-size:15px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 10px;max-width:62em}
+.lead{font-size:16px;line-height:1.5;margin:14px 0 0;max-width:62em}
+.lead b{font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-size:26px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.2;margin:2px 0}
+.tile .d{font-size:12px;color:var(--muted)}
+.up{color:var(--off)}.down{color:var(--on)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.alert{border-left:4px solid var(--acc)}
+.alert.ok{border-left-color:var(--on)}
+.notice{white-space:pre-line;font-size:13px;color:var(--muted);margin:6px 0 0}
+.chart{position:relative;width:100%;min-height:40px}
+.chart svg{display:block;overflow:visible;font-size:12px}
+.chart text{fill:var(--muted)}
+.chart text.num{fill:var(--text);font-variant-numeric:tabular-nums}
+.chart .tick{stroke:var(--text);stroke-width:2}
+.chart .ref{stroke:var(--muted);stroke-dasharray:3 3}
+.chart g.clk{cursor:pointer}
+.chart g.clk:hover rect.hit{fill:var(--panel2)}
+.chart .dim{opacity:.3}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin:0 0 8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.empty{color:var(--muted);font-size:13px;margin:8px 0}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-weight:600;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:5px 8px;border-bottom:1px solid var(--line)}
+td.n,th.n{text-align:right}
+td small{display:block;color:var(--muted);font-size:12px}
+.more{margin-top:8px;width:100%}
+tr.hl td{background:var(--panel2)}
+.heat td.n{min-width:3em}
+.daysel{margin:0 0 8px}
+details{margin-top:22px;color:var(--muted);font-size:13px}
+details summary{cursor:pointer}
+details li{margin:4px 0}
+.foot{margin:24px 0 0;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;opacity:.8}
+.foot a{color:var(--muted)}
+#tt{position:fixed;z-index:50;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;color:var(--muted);box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:260px;display:none}
+#tt div:first-child{color:var(--text);font-weight:600}
+#state{margin:30px 0;text-align:center;color:var(--muted)}
+</style>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="e90a0de3-497f-455a-ae67-4159b55d6c29"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="back" href="./" id="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Карта</a>
+    <div><h1>Світло <span>є?</span> Статистика</h1><small id="asOf">Завантаження…</small></div>
+  </header>
+
+  <div class="filters" id="filters" hidden>
+    <div class="frow">
+      <select id="fRem" aria-label="РЕМ"></select>
+      <input type="search" id="fPlace" list="placeList" placeholder="Населений пункт" aria-label="Населений пункт" autocomplete="off">
+      <datalist id="placeList"></datalist>
+      <select id="fQ" aria-label="Підчерга"></select>
+    </div>
+    <div class="frow">
+      <div class="seg" id="fKind" role="group" aria-label="Тип подій"><button data-k="all">Усе</button><button data-k="0">Аварії</button><button data-k="1">Планові</button></div>
+      <label class="chk"><input type="checkbox" id="fActive">лише ті, що тривають</label>
+      <span id="homeBtns"></span>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <p id="state">Завантаження статистики…</p>
+
+  <main id="main" hidden>
+    <p class="lead" id="lead"></p>
+    <div class="tiles" id="tiles"></div>
+
+    <section id="status">
+      <div class="grid2">
+        <div class="card alert" id="gavCard"><h3 id="gavTitle"></h3><p class="sub" id="gavText" style="margin:0"></p></div>
+        <div class="card" id="noticeCard"><h3>Оголошення обленерго</h3><p class="notice" id="notice"></p></div>
+      </div>
+    </section>
+
+    <section id="sched">
+      <h2>Графік відключень</h2>
+      <p class="sub">Рядок це підчерга, клітинка пів години. Вертикальна лінія: момент оновлення даних. Торкніться назви підчерги, щоб відфільтрувати.</p>
+      <div class="daysel seg" id="daySel" hidden></div>
+      <div class="legend"><span><i style="background:var(--off)"></i>вимкнено за графіком</span><span><i style="background:var(--on);opacity:.35"></i>є світло</span></div>
+      <div class="card"><div class="chart" id="heat"></div></div>
+    </section>
+
+    <section id="hours">
+      <h2>Скільки годин без світла</h2>
+      <p class="sub">За графіком на добу. Сайт зберігає історію за 62 дні.</p>
+      <div class="grid2">
+        <div class="card"><h3 id="hoursTitle">Сьогодні за підчергами</h3><p class="sub">Риска: попередній день.</p><div class="chart" id="hoursChart"></div></div>
+        <div class="card"><h3>По днях</h3><p class="sub">Темніше означає довше.</p><div class="scroll"><table class="heat" id="histTable"></table></div></div>
+      </div>
+    </section>
+
+    <section id="live">
+      <h2>Фактичний стан підчерг</h2>
+      <p class="sub">Частка будинків підчерги, яких сервіс обленерго «Чому немає світла?» показує вимкненими за графіком. Сайт довіряє цим даним замість графіка лише нижче 3% (є світло) або від 60% (вимкнено), пунктирні лінії.</p>
+      <div class="card">
+        <p id="liveLead" style="margin:0 0 8px"></p>
+        <div class="legend"><span><i style="background:var(--off)"></i>вимкнено</span><span><i style="background:var(--grey)"></i>невизначено</span><span><i style="background:var(--on)"></i>є світло</span></div>
+        <div class="chart" id="liveChart"></div>
+      </div>
+    </section>
+
+    <section id="events">
+      <h2>Аварії та планові роботи</h2>
+      <p class="sub">Той самий перелік, що у вікні «Де аварії»: аварії й планові роботи, які не завершились понад годину тому. Один запис означає одну вулицю. Торкніться смуги, щоб перейти глибше.</p>
+      <div class="legend"><span><i style="background:var(--acc)"></i>аварії</span><span><i style="background:var(--plan)"></i>планові роботи</span></div>
+      <div class="grid2">
+        <div class="card"><h3 id="areaTitle"></h3><div class="chart" id="areaChart"></div><p class="hint" id="areaMore"></p></div>
+        <div class="card">
+          <h3>Коли почались аварії сьогодні</h3><p class="sub">Записи за годиною початку.</p><div class="chart" id="hourChart"></div>
+          <h3 style="margin-top:14px">Тривалість за прогнозом</h3><p class="sub">Години від початку до очікуваного відновлення.</p><div class="chart" id="durChart"></div>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:10px">
+        <div class="card"><h3>Причини</h3><p class="sub">Як вказано обленерго. Торкніться, щоб відфільтрувати.</p><div class="chart" id="causeChart"></div><p class="hint" id="unmatched"></p></div>
+        <div class="card"><h3 id="listTitle">Записи</h3><p class="sub" id="listSub">Спершу ті, що тривають, з найбільшою кількістю будинків.</p><div class="scroll"><table id="evTable"></table></div><button class="btn more" id="listMore" hidden></button></div>
+      </div>
+    </section>
+
+    <section id="base">
+      <h2>База адрес і карта</h2>
+      <p class="sub">База адрес обленерго (оновлюється щодня) та скільки будинків з неї знайдено на карті OpenStreetMap.</p>
+      <div class="grid2">
+        <div class="card"><h3>Будинки за підчергами</h3>
+          <div class="legend"><span><i style="background:var(--grey)"></i>житлові</span><span><i style="background:var(--plan)"></i>нежитлові («ю»)</span></div>
+          <div class="chart" id="qHouses"></div><p class="hint">Будинок із житловим і нежитловим кодом рахується двічі.</p></div>
+        <div class="card"><h3 id="covTitle">Будинки з координатами</h3><p class="sub" id="covLead"></p><div class="chart" id="covChart"></div><p class="hint" id="covMore"></p></div>
+      </div>
+    </section>
+
+    <details>
+      <summary>Як рахуються показники</summary>
+      <ul>
+        <li>Години без світла: кількість пів годин «вимкнено» у графіку обленерго на добу, поділена на два. Без фільтра підчерги рахується середнє по 12 підчергах.</li>
+        <li>Запис аварії чи планових робіт: одна вулиця в одному населеному пункті. Одна аварія на підстанції дає кілька записів.</li>
+        <li>«Тривають»: час початку настав, а прогнозний час відновлення ще ні. «Мало завершитись»: прогноз минув, але обленерго ще не прибрало запис.</li>
+        <li>Підчерги аварії: підчерги будинків, названих у записі, за базою адрес. Записи, не зіставлені з базою, фільтр підчерги не проходять.</li>
+        <li>Фактичний стан підчерги: частка будинків підчерги з бази, яких сервіс обленерго показує вимкненими за графіком.</li>
+        <li>Покриття карти: будинки бази, яким знайдено будинок чи точку в OpenStreetMap. Решта на карті сірі, але пошук за адресою працює.</li>
+        <li>Статистика збирається щогодини з тих самих даних, що показує карта.</li>
+      </ul>
+    </details>
+    <div class="foot">© 2026 Oleh Pryimachuk · <a href="https://t.me/primus_ua" target="_blank" rel="noopener">Зв'язок у Telegram</a> · <a href="./">Карта</a></div>
+  </main>
+</div>
+<div id="tt"></div>
+<button id="toF" type="button">Фільтри</button>
+
+<script>
+"use strict";
+var URL_STATS = "https://raw.githubusercontent.com/primusua-ux/svitlo-zt/live/stats.json";
+var QUEUES = ["1.1","1.2","2.1","2.2","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
+var $ = function (id) { return document.getElementById(id); };
+var LIST_N = 15, ST = null, EV = [], F = {rem: null, sp: null, q: null, kind: "all", active: false, cause: null}, DAY = null;
+function track(n) { try { if (window.umami && umami.track) umami.track(n); } catch (e) {} }
+
+/* ---------- формати ---------- */
+var NF0 = new Intl.NumberFormat("uk-UA", {maximumFractionDigits: 0}), NF1 = new Intl.NumberFormat("uk-UA", {minimumFractionDigits: 1, maximumFractionDigits: 1});
+function n0(v) { return v == null || isNaN(v) ? "–" : NF0.format(v); }
+function n1(v) { return v == null || isNaN(v) ? "–" : NF1.format(v); }
+function pct(v, d) { return v == null || isNaN(v) ? "–" : (d ? NF1 : NF0).format(v * 100) + "%"; }
+var KD = new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/Kyiv", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23"});
+function kyiv(t) { var p = {}; KD.formatToParts(new Date(t * 1000)).forEach(function (x) { p[x.type] = x.value; }); return {day: p.year + "-" + p.month + "-" + p.day, h: +p.hour, m: +p.minute, hm: p.hour + ":" + p.minute}; }
+function dm(day) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(day || ""); return m ? m[3] + "." + m[2] : ""; }
+function when(t) { if (!t) return "–"; var k = kyiv(t); return k.day === ST.date ? k.hm : dm(k.day) + " " + k.hm; }
+function plural(n, a, b, c) { n = Math.abs(n) % 100; var m = n % 10; return n > 10 && n < 20 ? c : m === 1 ? a : m >= 2 && m <= 4 ? b : c; }
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]; }); }
+
+/* ---------- підказка ---------- */
+var TT = $("tt");
+function showTip(ev, lines) {
+  if (!lines || !lines.length) return;
+  TT.innerHTML = lines.filter(Boolean).map(function (l) { return "<div>" + esc(l) + "</div>"; }).join("");
+  TT.style.display = "block";
+  var w = TT.offsetWidth, h = TT.offsetHeight, x = ev.clientX + 12, y = ev.clientY + 12;
+  if (x + w > innerWidth - 6) x = Math.max(6, ev.clientX - w - 12);
+  if (y + h > innerHeight - 6) y = Math.max(6, ev.clientY - h - 12);
+  TT.style.left = x + "px"; TT.style.top = y + "px";
+}
+function hideTip() { TT.style.display = "none"; }
+addEventListener("scroll", hideTip, {passive: true});
+function bindTip(el, lines) {
+  if (!lines) return;
+  el.addEventListener("pointermove", function (e) { showTip(e, lines); });
+  el.addEventListener("pointerdown", function (e) { showTip(e, lines); });
+  el.addEventListener("pointerleave", hideTip);
+}
+
+/* ---------- креслення ---------- */
+var SVGNS = "http://www.w3.org/2000/svg";
+function S(tag, attrs, parent) { var e = document.createElementNS(SVGNS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function empty(el, text) { el.innerHTML = '<p class="empty">' + esc(text || "Немає даних для цих фільтрів") + "</p>"; }
+function textW(nodes) { var m = 0; nodes.forEach(function (t) { m = Math.max(m, t.getComputedTextLength()); }); return m; }
+
+// Горизонтальні смуги: rows = [{label, parts:[{v, c}], text, tick, tip:[...], click, dim}]
+function hbars(el, rows, o) {
+  o = o || {}; el.textContent = "";
+  if (!rows.length) return empty(el);
+  var W = Math.max(260, el.clientWidth), rh = 26, top = o.refs ? 16 : 0, H = top + rows.length * rh;
+  var svg = S("svg", {width: W, height: H, role: "img", "aria-label": o.aria || ""}, el);
+  var bars = S("g", {}, svg), labG = S("g", {}, svg), valG = S("g", {}, svg);
+  var labs = rows.map(function (r, i) { var t = S("text", {y: top + i * rh + rh / 2, dy: ".35em", "text-anchor": "end"}, labG); t.textContent = r.label; if (r.dim) t.setAttribute("class", "dim"); return t; });
+  var lw = Math.min(W * 0.45, textW(labs)) + 8;
+  labs.forEach(function (t, i) {
+    t.setAttribute("x", lw - 6);
+    var s = rows[i].label; while (s.length > 4 && t.getComputedTextLength() > lw - 8) { s = s.slice(0, -1); t.textContent = s + "…"; }
+  });
+  var vals = rows.map(function (r, i) { var t = S("text", {y: top + i * rh + rh / 2, dy: ".35em", "class": "num" + (r.dim ? " dim" : "")}, valG); t.textContent = r.text; return t; });
+  var vw = textW(vals) + 8;
+  var tot = function (r) { return r.parts.reduce(function (s, p) { return s + p.v; }, 0); };
+  var max = o.max || Math.max.apply(null, [1].concat(rows.map(tot)));
+  var X = function (v) { return lw + Math.max(30, W - vw - lw) * v / max; };
+  rows.forEach(function (r, i) {
+    var g = S("g", {"class": (r.click ? "clk" : "") + (r.dim ? " dim" : "")}, bars), y = top + i * rh;
+    S("rect", {x: 0, y: y, width: W, height: rh, fill: "transparent", "class": "hit", rx: 6}, g);
+    var x0 = 0;
+    r.parts.forEach(function (p) { var w = X(x0 + p.v) - X(x0); if (p.v > 0) S("rect", {x: X(x0), y: y + 5, width: Math.max(1.5, w), height: rh - 10, rx: 2, style: "fill:" + p.c}, g); x0 += p.v; });
+    vals[i].setAttribute("x", X(Math.max(x0, r.tick || 0)) + 5);
+    if (r.tick != null) { var xx = X(r.tick); S("line", {x1: xx, x2: xx, y1: y + 2, y2: y + rh - 2, "class": "tick"}, g); }
+    bindTip(g, r.tip); bindTip(labs[i], r.tip);
+    if (r.click) { g.addEventListener("click", r.click); labs[i].style.cursor = "pointer"; labs[i].addEventListener("click", r.click); }
+  });
+  (o.refs || []).forEach(function (rf) {
+    var xx = X(rf.v); S("line", {x1: xx, x2: xx, y1: 12, y2: H, "class": "ref"}, svg);
+    var t = S("text", {x: xx, y: 10, "text-anchor": rf.a || "middle"}, svg); t.textContent = rf.label;
+  });
+}
+
+// Вертикальні стовпчики: rows = [{label, v, tip}]
+function vbars(el, rows, color, h) {
+  el.textContent = "";
+  if (!rows.some(function (r) { return r.v > 0; })) return empty(el);
+  var W = Math.max(260, el.clientWidth), H = h || 170, b = 20, t = 16;
+  var svg = S("svg", {width: W, height: H, role: "img"}, el);
+  var bw = W / rows.length, max = Math.max.apply(null, rows.map(function (r) { return r.v; })) || 1;
+  var every = Math.max(1, Math.ceil(rows.length / Math.floor(W / 34)));
+  rows.forEach(function (r, i) {
+    var x = i * bw, hh = (H - b - t) * r.v / max, g = S("g", {}, svg);
+    S("rect", {x: x, y: t, width: bw, height: H - b - t, fill: "transparent"}, g);
+    if (r.v > 0) S("rect", {x: x + bw * 0.12, y: H - b - hh, width: bw * 0.76, height: Math.max(1.5, hh), rx: 2, style: "fill:" + color}, g);
+    if (r.v > 0 && bw >= 24) { var n = S("text", {x: x + bw / 2, y: H - b - hh - 4, "text-anchor": "middle", "class": "num"}, g); n.textContent = n0(r.v); }
+    if (i % every === 0) { var l = S("text", {x: x + bw / 2, y: H - 5, "text-anchor": "middle"}, svg); l.textContent = r.label; }
+    bindTip(g, r.tip);
+  });
+  S("line", {x1: 0, x2: W, y1: H - b, y2: H - b, style: "stroke:var(--line)"}, svg);
+}
+
+/* ---------- фільтри ---------- */
+function areaOk(rem, sp) { return (F.rem == null || rem === F.rem) && (F.sp == null || sp === F.sp); }
+function evOk(e, skip) {
+  skip = skip || {};
+  if (!areaOk(e.rem, e.sp)) return false;
+  if (F.q && e.qs.indexOf(F.q) < 0) return false;
+  if (!skip.kind && F.kind !== "all" && String(e.kind) !== F.kind) return false;
+  if (!skip.active && F.active && e.status !== "триває") return false;
+  if (!skip.cause && F.cause != null && e.cause !== F.cause) return false;
+  return true;
+}
+function setF(patch, why) {
+  for (var k in patch) F[k] = patch[k];
+  if (patch.rem !== undefined && patch.sp === undefined) F.sp = null;
+  LIST_N = 15; writeHash(); syncControls(); render();
+  if (why) track("Статистика: " + why);
+}
+function writeHash() {
+  var p = new URLSearchParams();
+  if (F.rem) p.set("rem", F.rem); if (F.sp) p.set("sp", F.sp); if (F.q) p.set("q", F.q);
+  if (F.kind !== "all") p.set("kind", F.kind); if (F.active) p.set("active", "1"); if (F.cause) p.set("cause", F.cause);
+  var h = p.toString();
+  history.replaceState(null, "", location.pathname + location.search + (h ? "#" + h : ""));
+}
+function readHash() {
+  var p = new URLSearchParams(location.hash.slice(1));
+  F.rem = p.get("rem"); F.sp = p.get("sp"); F.q = p.get("q"); F.kind = p.get("kind") || "all"; F.active = p.get("active") === "1"; F.cause = p.get("cause");
+  if (F.rem && ST.rems.indexOf(F.rem) < 0) F.rem = null;
+  if (F.q && QUEUES.indexOf(F.q) < 0) F.q = null;
+  if (["all", "0", "1"].indexOf(F.kind) < 0) F.kind = "all";
+  if (!F.rem) F.sp = null;
+}
+var PLACES = {};   // текст у полі -> [РЕМ, нас. пункт]
+function placeLabel(rem, sp) { return F.rem ? sp : sp + ", " + rem; }
+function fillPlaces() {
+  var seen = {}, opts = [];
+  PLACES = {};
+  ST.addr.forEach(function (a) { var rem = ST.rems[a[0]], sp = a[1]; if (F.rem && rem !== F.rem) return; var k = rem + "|" + sp; if (seen[k]) return; seen[k] = 1; var l = placeLabel(rem, sp); PLACES[l] = [rem, sp]; opts.push(l); });
+  opts.sort(function (a, b) { return a.localeCompare(b, "uk"); });
+  $("placeList").innerHTML = opts.map(function (l) { return '<option value="' + esc(l) + '">'; }).join("");
+}
+function syncControls() {
+  $("fRem").value = F.rem || "";
+  fillPlaces();
+  $("fPlace").value = F.sp ? placeLabel(F.rem, F.sp) : "";
+  $("fQ").value = F.q || "";
+  Array.prototype.forEach.call($("fKind").children, function (b) { b.className = b.dataset.k === F.kind ? "on" : ""; });
+  $("fActive").checked = F.active;
+  var chips = [];
+  if (F.rem) chips.push(["rem", F.rem + " РЕМ"]);
+  if (F.sp) chips.push(["sp", F.sp]);
+  if (F.q) chips.push(["q", "Підчерга " + F.q]);
+  if (F.kind !== "all") chips.push(["kind", F.kind === "0" ? "Лише аварії" : "Лише планові"]);
+  if (F.active) chips.push(["active", "Тривають"]);
+  if (F.cause) chips.push(["cause", "Причина: " + F.cause]);
+  $("chips").innerHTML = chips.map(function (c) { return '<button class="chip" data-x="' + c[0] + '">' + esc(c[1]) + '<b aria-label="Прибрати">×</b></button>'; }).join("") +
+    (chips.length > 1 ? '<button class="chip" data-x="all">Скинути все<b>×</b></button>' : "");
+  $("toF").innerHTML = "Фільтри" + (chips.length ? "<b>" + chips.length + "</b>" : "");
+}
+function setupControls() {
+  $("fRem").innerHTML = '<option value="">Уся область</option>' + ST.rems.slice().sort(function (a, b) { return a.localeCompare(b, "uk"); })
+    .filter(function (r) { return /ський$/.test(r); }).map(function (r) { return '<option value="' + esc(r) + '">' + esc(r) + " РЕМ</option>"; }).join("");
+  $("fQ").innerHTML = '<option value="">Усі підчерги</option>' + QUEUES.map(function (q) { return '<option value="' + q + '">Підчерга ' + q + "</option>"; }).join("");
+  $("fRem").onchange = function () { setF({rem: this.value || null}, "РЕМ"); };
+  $("fQ").onchange = function () { setF({q: this.value || null}, "підчерга"); };
+  var applyPlace = function () {
+    var v = $("fPlace").value.trim();
+    if (!v) { if (F.sp) setF({sp: null}); return; }
+    var m = PLACES[v]; if (m) setF({rem: m[0], sp: m[1]}, "населений пункт");
+  };
+  $("fPlace").addEventListener("change", applyPlace);
+  $("fPlace").addEventListener("input", function () { if (!this.value || PLACES[this.value]) applyPlace(); });
+  $("fKind").onclick = function (e) { var k = e.target.dataset && e.target.dataset.k; if (k) setF({kind: k}, "тип"); };
+  $("fActive").onchange = function () { setF({active: this.checked}, "тривають"); };
+  $("chips").onclick = function (e) {
+    var b = e.target.closest("[data-x]"); if (!b) return; var x = b.dataset.x;
+    if (x === "all") setF({rem: null, sp: null, q: null, kind: "all", active: false, cause: null});
+    else if (x === "rem") setF({rem: null, sp: null});
+    else setF(x === "kind" ? {kind: "all"} : x === "active" ? {active: false} : (function () { var o = {}; o[x] = null; return o; })());
+  };
+  // мої адреси з карти: швидкий фільтр
+  var hs = []; try { hs = JSON.parse(localStorage.getItem("svitlo.homes") || "[]") || []; } catch (e) {}
+  $("homeBtns").innerHTML = hs.slice(0, 3).map(function (h, i) {
+    var name = (h.st || h.sp || "") + (h.h ? " " + h.h : "");
+    return '<button class="btn home" data-i="' + i + '" title="' + esc(h.sp + ", " + name) + '">Моя: ' + esc(name.length > 22 ? name.slice(0, 21) + "…" : name) + "</button>";
+  }).join(" ");
+  $("homeBtns").onclick = function (e) {
+    var b = e.target.closest("[data-i]"); if (!b) return; var h = hs[+b.dataset.i]; if (!h) return;
+    var code = (h.codes || []).filter(function (c) { return !/ю$/.test(c); })[0] || (h.codes || [])[0] || "";
+    var q = code.replace("ю", ""); if (QUEUES.indexOf(q) < 0) q = null;
+    setF({rem: h.rem, sp: h.sp, q: q}, "моя адреса");
+  };
+}
+
+/* ---------- обчислення й креслення секцій ---------- */
+function snapshotSlot() { var k = kyiv(ST.at); return k.day === ST.date ? (k.h * 60 + k.m) / 30 : null; }
+function hoursOf(day, q) { var d = ST.hours[day]; if (!d) return null; if (q) return d[q] == null ? null : d[q] / 2; var s = 0, n = 0; QUEUES.forEach(function (x) { if (d[x] != null) { s += d[x]; n++; } }); return n ? s / n / 2 : null; }
+function prevDay(day) { var ds = Object.keys(ST.hours).sort().filter(function (d) { return d < day; }); return ds[ds.length - 1] || null; }
+
+function renderSummary() {
+  var day = ST.date, prev = prevDay(day), hT = hoursOf(day, F.q), hP = prev ? hoursOf(prev, F.q) : null;
+  var acc = EV.filter(function (e) { return e.kind === 0 && evOk(e, {kind: 1, active: 1}); });
+  var accA = acc.filter(function (e) { return e.status === "триває"; });
+  var plan = EV.filter(function (e) { return e.kind === 1 && evOk(e, {kind: 1, active: 1}); });
+  var accH = accA.reduce(function (s, e) { return s + e.houses; }, 0);
+  var base = 0, cH = 0, cC = 0;
+  ST.addr.forEach(function (a) { if (!areaOk(ST.rems[a[0]], a[1])) return; for (var c in a[2]) if (!F.q || c.replace("ю", "") === F.q) base += a[2][c]; });
+  ST.cov.forEach(function (c) { if (areaOk(ST.rems[c[0]], c[1])) { cH += c[2]; cC += c[3]; } });
+  var today = (ST.hours[day] || {}), maxQ = null;
+  QUEUES.forEach(function (q) { if (today[q] != null && (maxQ == null || today[q] > today[maxQ])) maxQ = q; });
+  var d = hT != null && hP != null ? hT - hP : null;
+  var where = F.sp ? "у " + F.sp : F.rem ? "у " + F.rem.replace(/ський$/, "ському") + " РЕМ" : "в області";
+  $("lead").innerHTML = "Станом на <b>" + when(ST.at) + "</b> " + (F.q ? "підчерга <b>" + F.q + "</b> сьогодні за графіком без світла <b>" + n1(hT) + "</b> год" :
+    "за графіком підчерги сьогодні в середньому без світла <b>" + n1(hT) + "</b> год, найдовше <b>" + (maxQ || "–") + "</b> (" + n1(maxQ ? today[maxQ] / 2 : null) + " год)") +
+    ". " + (where[0].toUpperCase() + where.slice(1)) + " тривають <b>" + n0(accA.length) + "</b> " + plural(accA.length, "запис", "записи", "записів") + " аварій" +
+    (accH ? " (" + n0(accH) + " " + plural(accH, "будинок", "будинки", "будинків") + ")" : "") + " і <b>" + n0(plan.length) + "</b> " + plural(plan.length, "запис", "записи", "записів") + " планових робіт" + (F.cause ? " з причиною «" + esc(F.cause) + "»" : "") + ".";
+  var dTxt = d == null ? "немає даних за попередній день" : (d > 0 ? "+" : d < 0 ? "−" : "±") + n1(Math.abs(d)) + " год до " + dm(prev);
+  var tiles = [
+    ["Без світла сьогодні" + (F.q ? ", " + F.q : ""), n1(hT) + " год", '<span class="' + (d > 0 ? "up" : d < 0 ? "down" : "") + '">' + dTxt + "</span>"],
+    ["Аварії тривають", n0(accA.length), "записів (вулиць) із " + n0(acc.length) + " у переліку"],
+    ["Будинків в аваріях", n0(accH), "названих у записах, що тривають"],
+    ["Планові роботи", n0(plan.length), "записів, не завершених понад годину тому"],
+    ["Будинків у базі", n0(base), F.q ? "підчерги " + F.q + (F.sp || F.rem ? ", " + (F.sp || F.rem + " РЕМ") : "") : (F.sp || F.rem ? (F.sp || F.rem + " РЕМ") : "уся область")],
+    ["На карті", pct(cH ? cC / cH : null, 1), n0(cC) + " із " + n0(cH) + " будинків мають координати"]
+  ];
+  $("tiles").innerHTML = tiles.map(function (t) { return '<div class="tile"><div class="k">' + esc(t[0]) + '</div><div class="v">' + t[1] + '</div><div class="d">' + t[2] + "</div></div>"; }).join("");
+  $("gavCard").className = "card alert" + (ST.gav.active ? "" : " ok");
+  $("gavTitle").textContent = ST.gav.active ? "Діють обласні аварійні відключення" : "Обласних аварійних відключень немає";
+  $("gavText").innerHTML = (ST.gav.active ? "Графік зараз може не застосовуватися. " : "Діє графік погодинних відключень. ") +
+    (ST.tomorrow ? "Графік на завтра вже опубліковано." : "Графіка на завтра ще немає.") +
+    (ST.source_updated ? " Обленерго оновило графік " + esc(ST.source_updated) + "." : "") +
+    (ST.gav.url ? ' <a href="' + esc(ST.gav.url) + '" target="_blank" rel="noopener">Повідомлення обленерго</a>' : "");
+  $("noticeCard").hidden = !ST.notice; $("notice").textContent = ST.notice || "";
+}
+
+function renderHeat() {
+  var days = Object.keys(ST.grid).sort();
+  if (!DAY || days.indexOf(DAY) < 0) DAY = days.indexOf(ST.date) >= 0 ? ST.date : days[0];
+  $("daySel").hidden = days.length < 2;
+  $("daySel").innerHTML = days.map(function (d) { return '<button data-d="' + d + '" class="' + (d === DAY ? "on" : "") + '">' + (d === ST.date ? "Сьогодні " : d > ST.date ? "Завтра " : "") + dm(d) + "</button>"; }).join("");
+  var el = $("heat"); el.textContent = "";
+  var grid = ST.grid[DAY] || {}, W = Math.max(280, el.clientWidth), lw = 34, top = 16, cw = (W - lw) / 48, ch = Math.max(16, Math.min(22, cw * 1.6)), H = top + QUEUES.length * ch;
+  var svg = S("svg", {width: W, height: H, role: "img", "aria-label": "Графік відключень на " + dm(DAY)}, el);
+  var step = cw * 2 >= 20 ? 2 : cw * 6 >= 24 ? 6 : 12;
+  for (var i = 0; i <= 48; i += step) { var t = S("text", {x: lw + i * cw, y: 11, "text-anchor": i === 0 ? "start" : i === 48 ? "end" : "middle"}, svg); t.textContent = String(i / 2).padStart(2, "0"); }
+  QUEUES.forEach(function (q, r) {
+    var row = grid[q] || "", dim = F.q && F.q !== q, g = S("g", {"class": dim ? "dim" : ""}, svg), y = top + r * ch;
+    var lab = S("text", {x: lw - 6, y: y + ch / 2, dy: ".35em", "text-anchor": "end", style: "cursor:pointer;" + (F.q === q ? "fill:var(--text);font-weight:700" : "")}, g); lab.textContent = q;
+    for (var s = 0; s < 48; s++) {
+      var off = row.charAt(s) === "1", c = S("rect", {x: lw + s * cw + 0.5, y: y + 1, width: Math.max(1, cw - 1), height: ch - 2, rx: 1.5, style: "fill:" + (off ? "var(--off)" : "var(--on)") + ";opacity:" + (off ? 0.88 : 0.3)}, g);
+      (function (s, off) { var a = s * 30, b = a + 30; bindTip(c, ["Підчерга " + q, String(Math.floor(a / 60)).padStart(2, "0") + ":" + String(a % 60).padStart(2, "0") + "–" + String(Math.floor(b / 60)).padStart(2, "0") + ":" + String(b % 60).padStart(2, "0"), off ? "вимкнено за графіком" : "є світло"]); })(s, off);
+    }
+    lab.addEventListener("click", function () { setF({q: F.q === q ? null : q}, "підчерга з графіка"); });
+  });
+  var sl = snapshotSlot();
+  if (DAY === ST.date && sl != null) { var x = lw + sl * cw; S("line", {x1: x, x2: x, y1: top - 3, y2: H, style: "stroke:var(--text);stroke-width:1.5"}, svg); }
+}
+
+function renderHours() {
+  var day = ST.date, prev = prevDay(day), t = ST.hours[day] || {}, p = prev ? ST.hours[prev] || {} : {};
+  $("hoursTitle").textContent = "Сьогодні, " + dm(day);
+  hbars($("hoursChart"), QUEUES.filter(function (q) { return t[q] != null; }).map(function (q) {
+    return {label: q, parts: [{v: t[q] / 2, c: "var(--off)"}], text: n1(t[q] / 2), tick: p[q] != null ? p[q] / 2 : null, dim: F.q && F.q !== q,
+      tip: ["Підчерга " + q, n1(t[q] / 2) + " год сьогодні", p[q] != null ? n1(p[q] / 2) + " год " + dm(prev) : ""],
+      click: function () { setF({q: F.q === q ? null : q}, "підчерга з годин"); }};
+  }), {max: 24, aria: "Години без світла сьогодні за підчергами"});
+  var days = Object.keys(ST.hours).sort().slice(-14), tb = $("histTable");
+  tb.innerHTML = "<thead><tr><th>Підчерга</th>" + days.map(function (d) { return '<th class="n">' + dm(d) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+    QUEUES.map(function (q) {
+      return '<tr class="' + (F.q === q ? "hl" : "") + '"><td>' + q + "</td>" + days.map(function (d) {
+        var v = (ST.hours[d] || {})[q]; if (v == null) return '<td class="n">–</td>';
+        return '<td class="n" style="background:color-mix(in srgb, var(--off) ' + Math.round(Math.min(1, v / 2 / 14) * 55) + '%, transparent)">' + n1(v / 2) + "</td>";
+      }).join("") + "</tr>";
+    }).join("") + "</tbody>";
+}
+
+function renderLive() {
+  var sl = snapshotSlot(), g = ST.grid[ST.date] || {}, decided = 0, agree = 0;
+  var rows = QUEUES.concat(["0"]).filter(function (q) { return ST.live[q] != null; }).map(function (q) {
+    var v = ST.live[q], verdict = v >= 0.6 ? "вимкнено" : v <= 0.03 ? "є світло" : "невизначено";
+    var sch = q === "0" ? null : sl == null ? null : (g[q] || "").charAt(Math.floor(sl)) === "1";
+    if (q !== "0" && verdict !== "невизначено") { decided++; if (sch != null && (verdict === "вимкнено") === sch) agree++; }
+    return {label: q === "0" ? "не вимик." : q, parts: [{v: v, c: verdict === "вимкнено" ? "var(--off)" : verdict === "є світло" ? "var(--on)" : "var(--grey)"}], text: pct(v),
+      dim: F.q && F.q !== q,
+      tip: [q === "0" ? "Не вимикаються за графіком" : "Підчерга " + q, pct(v, 1) + " будинків вимкнено", "сайт вважає: " + verdict, sch == null ? "" : "за графіком: " + (sch ? "вимкнено" : "є світло")],
+      click: q === "0" ? null : function () { setF({q: F.q === q ? null : q}, "підчерга з фактичного стану"); }};
+  });
+  $("liveLead").textContent = "На " + when(ST.at) + " однозначних підчерг " + decided + " із 12, з графіком збігаються " + agree + ".";
+  hbars($("liveChart"), rows, {max: 1, refs: [{v: 0.03, label: "3%", a: "start"}, {v: 0.6, label: "60%"}], aria: "Фактичний стан підчерг"});
+}
+
+function group(list, key) {
+  var m = {}; list.forEach(function (e) { var k = key(e); var r = m[k] || (m[k] = {k: k, acc: 0, plan: 0, houses: 0, active: 0}); if (e.kind === 0) r.acc++; else r.plan++; r.houses += e.houses; if (e.status === "триває") r.active++; });
+  return Object.keys(m).map(function (k) { return m[k]; });
+}
+function renderEvents() {
+  var list = EV.filter(function (e) { return evOk(e); });
+  var level = F.sp ? "st" : F.rem ? "sp" : "rem";
+  $("areaTitle").textContent = level === "rem" ? "За РЕМ" : level === "sp" ? "За населеними пунктами, " + F.rem + " РЕМ" : "За вулицями, " + F.sp;
+  var gr = group(list, function (e) { return e[level]; }).sort(function (a, b) { return (b.acc + b.plan) - (a.acc + a.plan) || b.houses - a.houses; });
+  var top = gr.slice(0, 15);
+  hbars($("areaChart"), top.map(function (r) {
+    return {label: r.k.replace('АТ "Житомиробленерго"', "Обленерго"), parts: [{v: r.acc, c: "var(--acc)"}, {v: r.plan, c: "var(--plan)"}], text: n0(r.acc + r.plan),
+      tip: [r.k, n0(r.acc) + " аварій, тривають " + n0(r.active), n0(r.plan) + " планових", n0(r.houses) + " будинків у записах"],
+      click: level === "st" || r.k === 'АТ "Житомиробленерго"' ? null : function () { setF(level === "rem" ? {rem: r.k} : {sp: r.k}, "перехід глибше"); }};
+  }), {aria: $("areaTitle").textContent});
+  $("areaMore").textContent = gr.length > 15 ? "Показано 15 із " + gr.length + "." : "";
+  // за годиною початку (сьогодні)
+  var hrs = []; for (var h = 0; h < 24; h++) hrs.push({label: String(h).padStart(2, "0"), v: 0});
+  list.forEach(function (e) { if (e.kind === 0 && e.startDay === ST.date) hrs[e.startHour].v++; });
+  hrs.forEach(function (r) { r.tip = [r.label + ":00–" + r.label + ":59", n0(r.v) + " записів аварій"]; });
+  vbars($("hourChart"), hrs, "var(--acc)", 160);
+  // тривалість
+  var bins = [["до 2", 0, 2, "до 2 год"], ["2–4", 2, 4, "2–4 год"], ["4–8", 4, 8, "4–8 год"], ["8–24", 8, 24, "8–24 год"], ["24+", 24, 1e9, "понад добу"], ["н/д", -1, -1, "без прогнозу"]].map(function (b) { return {label: b[0], a: b[1], b: b[2], name: b[3], v: 0}; });
+  list.forEach(function (e) { if (e.kind !== 0) return; var d = e.dur; var bi = d == null ? 5 : bins.findIndex(function (b, i) { return i < 5 && d >= b.a && d < b.b; }); if (bi >= 0) bins[bi].v++; });
+  if (!bins[5].v) bins.pop();
+  bins.forEach(function (b) { b.tip = [b.name, n0(b.v) + " записів аварій"]; });
+  vbars($("durChart"), bins, "var(--acc)", 150);
+  // причини (без фільтра причини, щоб її можна було змінити)
+  var cl = EV.filter(function (e) { return evOk(e, {cause: 1}); });
+  var cg = group(cl, function (e) { return e.cause; }).sort(function (a, b) { return (b.acc + b.plan) - (a.acc + a.plan); }).slice(0, 8);
+  hbars($("causeChart"), cg.map(function (r) {
+    return {label: r.k, parts: [{v: r.acc, c: "var(--acc)"}, {v: r.plan, c: "var(--plan)"}], text: n0(r.acc + r.plan), dim: F.cause && F.cause !== r.k,
+      tip: [r.k, n0(r.acc) + " аварій", n0(r.plan) + " планових"], click: function () { setF({cause: F.cause === r.k ? null : r.k}, "причина"); }};
+  }), {aria: "Записи за причиною"});
+  var un = list.filter(function (e) { return !e.matched; }).length;
+  $("unmatched").textContent = list.length ? "Не зіставлено з вулицями бази: " + pct(un / list.length, 1) + " записів. Вони є в переліку, але не на карті." : "";
+  // перелік записів
+  var rows = list.slice().sort(function (a, b) { return (a.status === "триває" ? 0 : 1) - (b.status === "триває" ? 0 : 1) || b.houses - a.houses; });
+  var n = Math.min(LIST_N, rows.length);
+  $("listTitle").textContent = "Записи: " + n0(rows.length);
+  $("listSub").hidden = !rows.length;
+  $("evTable").innerHTML = rows.length ? "<thead><tr><th>Адреса</th><th>Що і коли</th><th>Підчерги</th><th class=\"n\">Будинків</th></tr></thead><tbody>" +
+    rows.slice(0, n).map(function (e) {
+      return "<tr><td>" + esc(e.st) + (F.sp ? "" : "<small>" + esc(e.sp) + "</small>") + "</td><td>" + (e.kind === 0 ? "аварія" : "планові роботи") + ", " + e.status +
+        "<small>" + when(e.t0) + "–" + when(e.t1) + "</small></td><td>" + esc(e.qs.map(function (q) { return q === "0" ? "без графіка" : q; }).join(", ") || "–") + '</td><td class="n">' + n0(e.houses) + "</td></tr>";
+    }).join("") + "</tbody>" : '<tbody><tr><td class="empty">Немає записів для цих фільтрів</td></tr></tbody>';
+  $("listMore").hidden = rows.length <= n;
+  $("listMore").textContent = "Показати ще " + n0(Math.min(30, rows.length - n)) + " із " + n0(rows.length - n);
+}
+
+function renderBase() {
+  var m = {};
+  ST.addr.forEach(function (a) { if (!areaOk(ST.rems[a[0]], a[1])) return; for (var c in a[2]) { var q = c.replace("ю", ""), r = m[q] || (m[q] = {res: 0, non: 0}); if (/ю$/.test(c)) r.non += a[2][c]; else r.res += a[2][c]; } });
+  hbars($("qHouses"), QUEUES.concat(["0"]).filter(function (q) { return m[q]; }).map(function (q) {
+    var r = m[q];
+    return {label: q === "0" ? "не вимик." : q, parts: [{v: r.res, c: "var(--grey)"}, {v: r.non, c: "var(--plan)"}], text: n0(r.res + r.non), dim: F.q && F.q !== q,
+      tip: [q === "0" ? "Не вимикаються за графіком" : "Підчерга " + q, n0(r.res) + " житлових", n0(r.non) + " нежитлових"],
+      click: q === "0" ? null : function () { setF({q: F.q === q ? null : q}, "підчерга з бази"); }};
+  }), {aria: "Будинки бази за підчергами"});
+  var level = F.sp ? "sp" : F.rem ? "sp" : "rem", g = {};
+  ST.cov.forEach(function (c) { var rem = ST.rems[c[0]]; if (!areaOk(rem, c[1])) return; var k = level === "rem" ? rem : c[1]; var r = g[k] || (g[k] = {k: k, h: 0, c: 0}); r.h += c[2]; r.c += c[3]; });
+  var rows = Object.keys(g).map(function (k) { return g[k]; });
+  var tH = rows.reduce(function (s, r) { return s + r.h; }, 0), tC = rows.reduce(function (s, r) { return s + r.c; }, 0);
+  $("covTitle").textContent = level === "rem" ? "Будинки з координатами за РЕМ" : F.sp ? "Будинки з координатами, " + F.sp : "Найбільші населені пункти, " + F.rem + " РЕМ";
+  $("covLead").textContent = "Координати мають " + n0(tC) + " із " + n0(tH) + " будинків (" + pct(tH ? tC / tH : null, 1) + ").";
+  if (level === "rem") rows.sort(function (a, b) { return b.c / b.h - a.c / a.h; }); else rows.sort(function (a, b) { return b.h - a.h; });
+  var shown = rows.slice(0, 20);
+  hbars($("covChart"), shown.map(function (r) {
+    return {label: r.k, parts: [{v: r.h ? r.c / r.h : 0, c: "var(--on)"}], text: pct(r.h ? r.c / r.h : 0), tip: [r.k, pct(r.h ? r.c / r.h : 0, 1) + " з координатами", n0(r.c) + " із " + n0(r.h) + " будинків"],
+      click: F.sp ? null : function () { setF(level === "rem" ? {rem: r.k} : {sp: r.k}, "перехід глибше"); }};
+  }), {max: 1, aria: $("covTitle").textContent});
+  $("covMore").textContent = rows.length > 20 ? "Показано 20 найбільших із " + rows.length + "." : "";
+}
+
+function render() {
+  hideTip();
+  renderSummary(); renderHeat(); renderHours(); renderLive(); renderEvents(); renderBase();
+}
+
+/* ---------- завантаження ---------- */
+function prepare(d) {
+  ST = d;
+  EV = d.ev.map(function (a) {
+    var t0 = a[4], t1 = a[5], k = t0 ? kyiv(t0) : null;
+    return {kind: a[0], rem: d.rems[a[1]], sp: a[2], st: a[3], t0: t0, t1: t1, cause: d.causes[a[6]], houses: a[7], matched: a[8], qs: a[9] ? a[9].split(",") : [],
+      status: t0 && t0 <= d.at && (!t1 || t1 >= d.at) ? "триває" : t0 && t0 > d.at ? "заплановано" : "мало завершитись",
+      startDay: k ? k.day : null, startHour: k ? k.h : null, dur: t0 && t1 && t1 >= t0 ? (t1 - t0) / 3600 : null};
+  });
+  var age = (Date.now() / 1000 - d.generated) / 3600;
+  $("asOf").textContent = "Дані на " + when(d.at) + ", " + dm(d.date) + ". Оновлюється щогодини" + (age > 3 ? ". Увага: дані старші за " + Math.floor(age) + " год" : "");
+  $("asOf").className = age > 3 ? "warn" : "";
+}
+var started = false;
+function load() {
+  return fetch(URL_STATS + "?t=" + Math.floor(Date.now() / 300000), {cache: "no-cache"}).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
+    var first = !started; prepare(d);
+    if (first) { started = true; setupControls(); readHash(); syncControls(); $("filters").hidden = false; $("main").hidden = false; $("state").hidden = true; }
+    render();
+  }).catch(function () {
+    if (!started) { $("state").textContent = "Не вдалося завантажити статистику. Перевірте з'єднання й оновіть сторінку."; $("asOf").textContent = ""; }
+  });
+}
+load();
+setInterval(function () { if (!document.hidden) load(); }, 10 * 60 * 1000);
+addEventListener("hashchange", function () { if (started) { readHash(); syncControls(); render(); } });
+var rz; addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(function () { if (started) render(); }, 150); });
+// на телефоні фільтри не липнуть до верху: кнопка повертає до них
+var toF = $("toF");
+toF.onclick = function () { scrollTo({top: 0, behavior: "smooth"}); };
+new IntersectionObserver(function (es) { toF.classList.toggle("show", started && !es[0].isIntersecting); }).observe($("filters"));
+$("listMore").onclick = function () { LIST_N += 30; renderEvents(); };
+$("daySel").onclick = function (e) { var b = e.target.closest("[data-d]"); if (b) { DAY = b.dataset.d; renderHeat(); } };
+try { matchMedia("(prefers-color-scheme: light)").addEventListener("change", applyTheme); } catch (e) {}
+</script>
+</body>
+</html>

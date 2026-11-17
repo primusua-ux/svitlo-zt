@@ -217,6 +217,7 @@ a{color:var(--accent)}
   <button class="iconbtn" id="btnHome" aria-label="Мої адреси"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></button>
   <button class="iconbtn" id="btnQueues" aria-label="Підчерги на карті"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/></svg></button>
   <button class="iconbtn" id="btnTime" aria-label="Карта на інший час"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
+  <a class="iconbtn" id="btnStats" href="stats.html" aria-label="Статистика"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 16v-5M12 16V6M17 16v-8"/></svg></a>
   <button class="iconbtn" id="btnHelp" aria-label="Допомога"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.5"/></svg></button>
 </div>
 <button class="ps" id="psLogo" aria-label="Про сайт і автора">© 2026 Oleh Pryimachuk</button>
@@ -292,6 +293,7 @@ a{color:var(--accent)}
     <li>Кнопка з будиночком: ваші збережені адреси. Зберегти адресу можна в картці кнопкою «Зберегти».</li>
     <li>Кнопка з шарами: розфарбувати карту за номерами підчерг.</li>
     <li>Кнопка з годинником: подивитися, де буде світло в інший час сьогодні чи завтра.</li>
+    <li>Кнопка зі стовпчиками: <a href="stats.html">статистика</a> відключень, аварій і планових робіт з фільтрами за районом, населеним пунктом і підчергою.</li>
     <li>Кнопка «Поділитися» в картці надсилає посилання, яке відкриває саме цю адресу.</li>
   </ol>
   <h4>Кольори на карті</h4>
@@ -878,6 +880,7 @@ document.querySelectorAll("[data-close]").forEach(function(b){b.onclick=function
 $("btnSearch").onclick=function(){track("Пошук");openPanel("search")};
 $("brand").onclick=function(){openPanel("about")};
 $("btnHelp").onclick=function(){track("Допомога");openPanel("about")};
+$("btnStats").onclick=function(){track("Статистика")};
 $("psLogo").onclick=function(){openPanel("about")};
 $("btnAcc").onclick=function(){track("Де аварії");openPanel("accP");renderAcc()};
 $("btnHome").onclick=function(){track("Мої адреси");renderHomes();openPanel("homesP")};
