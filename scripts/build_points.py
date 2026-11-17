@@ -176,9 +176,18 @@ def anchored(la, lo, r=0.8):
 
 stats = Counter(); house_rows = []; cells = defaultdict(list); matched_houses = set(); seen = set(); street_hit = set()
 mh = []   # знайдені будинки: (lat, lon, ключ вулиці в OSM, rem, sp, k, коди)
+seenp = set()
 def take_house(la, lo, rem, sp, k, hk, hn, codes, osk=None):
     key = (rem, sp, k, hk, round(la, 4), round(lo, 4))
-    if key in seen: return
+    # В OSM одна адреса часто двічі: точка біля входу і сама будівля з контуром. Раніше другу відкидали як повтор,
+    # і якщо першою йшла точка, контур губився (будинок сірий, поруч кружечок). Рядок з контуром беремо завжди,
+    # а зайву точку при записі плиток прибирає перевірка haspoly.
+    withp = (la, lo, hn.strip()) in polyof
+    if key in seen:
+        if not withp or key in seenp: return
+        seenp.add(key); stats["outline_after_point"] += 1
+        house_rows.append((la, lo, rem, sp, k, hk, hn.strip(), "|".join(collapse(codes)))); return
+    if withp: seenp.add(key)
     mh.append((la, lo, osk or k, rem, sp, k, "|".join(collapse(codes))))
     seen.add(key); matched_houses.add((rem, sp, k, hk)); stats["matched"] += 1
     house_rows.append((la, lo, rem, sp, k, hk, hn.strip(), "|".join(collapse(codes))))
