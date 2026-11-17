@@ -5,7 +5,7 @@
 import glob, html, json, re, sys, time, urllib.request
 from collections import defaultdict, Counter
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from norm import street_key, house_key, place_key
 
@@ -18,7 +18,7 @@ def get(url, tries=3):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
                 return r.read()
-        except Exception as e:
+        except Exception:
             if i == tries - 1: raise
             time.sleep(2 + 3 * i)
 

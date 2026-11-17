@@ -1,5 +1,7 @@
 name: Координати будинків з OpenStreetMap
 on:
+  schedule:
+    - cron: "17 2 3 * *"   # раз на місяць: нові будинки й адреси, які дорисували в OpenStreetMap
   workflow_dispatch:
   push:
     paths: ["scripts/osm_extract.py", ".github/workflows/osm.yml"]
@@ -23,9 +25,11 @@ jobs:
           osmium cat /tmp/rel.osm.pbf -f opl -o /tmp/rel.opl
           ls -la /tmp/*.pbf /tmp/f.geojsonseq
       - run: python3 scripts/osm_extract.py /tmp/f.geojsonseq data/osm /tmp/rel.opl
+      - name: Перебудувати плитки будинків з новими даними
+        run: python3 scripts/build_points.py data
       - run: |
           git config user.name "osm-bot"
           git config user.email "osm-bot@users.noreply.github.com"
-          git add data/osm
+          git add data/osm data/pts data/geo data/coverage.csv
           git commit -m "OSM: адресні точки області" || exit 0
           git pull --rebase && git push

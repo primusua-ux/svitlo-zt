@@ -7,7 +7,7 @@ from collections import defaultdict, Counter
 
 D = sys.argv[1] if len(sys.argv) > 1 else "data"
 
-from norm import LAT2CYR, street_key, house_key, place_key
+from norm import street_key, house_key, place_key
 
 def dist(a, b, c, d):
     x = (d - b) * math.cos(math.radians((a + c) / 2)) * 111.32; y = (c - a) * 110.54
@@ -206,7 +206,49 @@ for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
     if len(hits) == 1: add_anchor(la, lo, *next(iter(hits)))
 stats["pre_anchors"] = sum(len(v) for v in anchors.values())
 
-pend_h = []; polyof = {}
+# де лежить кожна вулиця бази: будинки, номер яких є лише на одній однойменній вулиці серед усіх населених пунктів до 8 км.
+# Потрібно, бо однакові назви бувають і в місті, і в сусідньому селі (вул. Корольова в Житомирі і в Смоківці-Вересах),
+# а номери частково збігаються. Тоді будинок віддаємо тій вулиці, чиї однозначні будинки найближче.
+spos = defaultdict(list)   # (rem, sp, k) -> клітинка 0.05 градуса -> точки
+for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
+    cols = ln.rstrip("\n").split("\t"); la = float(cols[0]); lo = float(cols[1]); hn = cols[2]; st = cols[3] or cols[4]
+    if not hn or not st: continue
+    sk = street_key(st); hk = house_key(hn); cs = candidates(la, lo, cols[5]); hits = set()
+    for rem, sp in cs + ext_cands(la, lo, set(cs)):
+        m = zt[(rem, sp)]; k = find_street(m, sk, la, lo, fuzzy=False)
+        if k is not None and hk in m[k]: hits.add((rem, sp, k))
+    if len(hits) == 1: spos[next(iter(hits))].append((la, lo))
+stats["street_pos_pts"] = sum(len(v) for v in spos.values())
+def street_share(s, la, lo):
+    """Яка частка однозначних будинків вулиці лежить у межах 1 км (None, якщо їх немає).
+    У далекої однойменної вулиці тут лише кілька випадкових збігів номерів, у справжньої більшість."""
+    pts = spos.get(s)
+    if not pts: return None
+    return sum(1 for a, b in pts if dist(la, lo, a, b) <= 1.0) / len(pts)
+def pick(hits, la, lo, streets):
+    """hits: (rem, sp, k, ...) з потрібним номером; streets: усі однойменні вулиці серед кандидатів.
+    Обираємо вулицю з найбільшою часткою однозначних будинків поруч; None, якщо обрана лежить далеко (див. нижче)."""
+    sh = lambda x: street_share(x[:3], la, lo)
+    h = hits[0]
+    # будинок усередині свого населеного пункту (до 0.8 його радіуса) у нього не забираємо: інакше великі міста
+    # віддавали б будинки сусіднім селам з однойменною вулицею (Житомир → Зарічани, центр Бердичева → Гришківці)
+    inside = any(r <= 0.8 and place_key(nm) == place_key(h[1]) for r, p in near_places(la, lo) for nm in (p[3], p[4]) if nm)
+    if inside: return h
+    if len({x[:3] for x in hits}) > 1:
+        best = max(hits, key=lambda x: (sh(x) or 0))
+        if (sh(best) or 0) > (sh(h) or 0): h = best; stats["picked_by_street_pos"] += 1
+    # обрана вулиця майже вся лежить далеко (менше 5% її однозначних будинків поруч), а серед кандидатів є однойменна
+    # вулиця іншого населеного пункту: номер, найпевніше, просто відсутній у списку місцевої вулиці
+    # Відкидаємо лише за двох умов: далека вулиця має досить даних (від 8 однозначних будинків), і є підтвердження, що тут
+    # інший населений пункт: однойменна вулиця, більшість однозначних будинків якої поруч, або цей пункт уже надійно
+    # визначено за сусідніми будинками з рідкісними назвами вулиць (якорі до 400 м)
+    an = anchored(la, lo, 0.4)
+    others = [x for x in streets if x[:3] != h[:3] and x[1] != h[1] and ((sh(x) or 0) >= 0.3 or (x[0], x[1]) in an)]
+    if others and sh(h) is not None and sh(h) < 0.05 and len(spos[h[:3]]) >= 8:
+        stats["rejected_far_street"] += 1; stats["rejected:" + h[1]] += 1; return None
+    return h
+
+pend_h = []; polyof = {}; unm = []
 for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
     cols = ln.rstrip("\n").split("\t")
     la, lo, hn, st, pl, city, sub = cols[:7]
@@ -234,10 +276,14 @@ for ln in gzip.open(f"{D}/osm/addr.tsv.gz", "rt", encoding="utf-8"):
             take_house(la, lo, hits[0][0], hits[0][1], hits[0][2], hk, hn, hits[0][3]); stats["inferred_street"] += 1
         else: stats["no_street"] += 1
         continue
-    sk = street_key(st)
+    sk = street_key(st); hits = []
     for rem, sp in cands:
         m = zt[(rem, sp)]; k = find_street(m, sk, la, lo)
-        if k is not None and hk in m[k]: hit = (rem, sp, k, m[k][hk]); break
+        if k is not None and hk in m[k]: hits.append((rem, sp, k, m[k][hk]))
+    if hits:
+        streets = [(rem, sp, k) for rem, sp in cands for k in [find_street(zt[(rem, sp)], sk, la, lo)] if k is not None]
+        hit = pick(hits, la, lo, streets)
+        if hit is None: unm.append((la, lo, hn, sk, hk, tuple(cands))); continue
     if hit: take_house(la, lo, hit[0], hit[1], hit[2], hk, hn, hit[3], sk)
     else: pend_h.append((la, lo, hn, sk, hk, tuple(cands)))
 
@@ -248,7 +294,7 @@ def ext_house(la, lo, sk, hk, pool):
         if k is not None and hk in m[k]: hits.append((rem, sp, k, m[k][hk]))
     return hits[0] if len(hits) == 1 else None
 
-rest = []; unm = []
+rest = []
 for la, lo, hn, sk, hk, cands in pend_h:          # прохід А: рідкісні назви вулиць
     hit = ext_house(la, lo, sk, hk, ext_cands(la, lo, cands)) if freq[sk[1]] <= COMMON else None
     if hit:
@@ -273,10 +319,11 @@ for la, lo, name, old in street_rows:
     if an: cands = sorted(an) + [c for c in cands if c not in an]
     for nm in street_names(name, old):
         sk = street_key(nm)
-        for rem, sp in cands[:3]:
-            k = find_street(zt[(rem, sp)], sk, la, lo)
-            if k is not None: take_street(la, lo, rem, sp, k, name); done = True; break
-        if done: break
+        hits = [(rem, sp, k) for rem, sp in cands[:3] for k in [find_street(zt[(rem, sp)], sk, la, lo)] if k is not None]
+        if hits:
+            h = pick(hits, la, lo, hits)
+            if h: take_street(la, lo, *h, name); done = True
+            break
     if not done: pend_s.append((la, lo, name, old, tuple(cands)))
 
 rest_s = []
@@ -320,7 +367,7 @@ for key, rows in groups.items():
 
 # ---------- будинки, яких немає в базі або які не мають номера на карті: підчерга за вулицею ----------
 # Беремо лише однозначні випадки: уся вулиця в одній підчерзі або щонайменше три відомі сусіди
-# на цій самій вулиці (до 100 м) в одній підчерзі. Такі рядки в плитці мають позначку «приблизно».
+# на цій самій вулиці (до 80 м) в одній підчерзі. Такі рядки в плитці мають позначку «приблизно».
 hgrid = defaultdict(list)
 for h in mh: hgrid[(int(h[0] * 400), int(h[1] * 250))].append(h)
 def houses_near(la, lo, r):
@@ -352,7 +399,10 @@ scode = {}
 def code_for(s, la, lo):
     if s not in scode: scode[s] = collapse([c for cs in zt[(s[0], s[1])][s[2]].values() for c in cs])
     if len(scode[s]) == 1: return scode[s][0]
-    cs = [h[6] for h in houses_near(la, lo, 0.1) if (h[3], h[4], h[5]) == s]
+    # щонайменше 3 відомі будинки цієї вулиці в межах 80 м, усі в одній підчерзі. Перевірено на будинках з відомою
+    # підчергою (ховаємо її і вгадуємо за сусідами): 97,8% влучань. Радіус 80 м дає відповідь частіше, ніж 100 м
+    # (51% будинків змішаних вулиць проти 46%) за тієї самої точності: у ширшому колі частіше трапляється сусід з іншої підчерги.
+    cs = [h[6] for h in houses_near(la, lo, 0.08) if (h[3], h[4], h[5]) == s]
     if len(cs) >= 3 and len(set(cs)) == 1 and "|" not in cs[0]: return cs[0]
     return None
 icells = defaultdict(list)

@@ -19,6 +19,7 @@
 <link rel="icon" href="icons/icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Світло є?">
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
@@ -46,12 +47,12 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
 .brand small.warn{color:var(--accent)}
 .iconbtn{pointer-events:auto;width:48px;height:48px;border:0;border-radius:14px;background:var(--panel);color:var(--text);
   display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.35);cursor:pointer;flex:none}
+.iconbtn{position:relative}
 .iconbtn:active{background:var(--panel2)}
 .iconbtn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #locate{position:fixed;right:10px;bottom:calc(24px + var(--safe-b));z-index:500;transition:transform .25s}
 .side{position:fixed;right:10px;top:calc(66px + var(--safe-t));z-index:480;display:flex;flex-direction:column;gap:8px;transition:top .2s}
 .side.low{top:calc(118px + var(--safe-t))}
-.iconbtn{position:relative}
 .badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--acc);color:#1a1205;font-size:11px;font-weight:700;display:none;place-items:center;padding:0 5px}
 .iconbtn.acc svg{stroke:var(--acc)}
 .tabs{display:flex;gap:6px;margin:0 0 10px}
@@ -86,16 +87,15 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
 .psfoot a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(128,128,128,.4)}
 .psfoot .sep{margin:0 6px;opacity:.6}
 .hint{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:500;width:max-content;max-width:84vw;text-align:center;
-  background:rgba(20,24,31,.9);color:var(--text);padding:18px 24px;border-radius:18px;font-size:22px;line-height:1.3;font-weight:600;
+  background:var(--glass);color:var(--text);padding:18px 24px;border-radius:18px;font-size:22px;line-height:1.3;font-weight:600;
   pointer-events:none;transition:opacity .4s;box-shadow:0 6px 24px rgba(0,0,0,.4)}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:600;background:var(--panel);border-radius:18px 18px 0 0;
   padding:8px 16px calc(14px + var(--safe-b));box-shadow:0 -4px 24px rgba(0,0,0,.45);
   transform:translateY(105%);transition:transform .25s ease;max-height:78vh;overflow:auto}
 .sheet.open{transform:none}
 .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 8px}
-.close{position:absolute;right:8px;top:8px;width:40px;height:40px;border:0;background:none;color:var(--muted);font-size:24px;cursor:pointer}
-.addr{font-size:15px;color:var(--muted);padding-right:36px}
-.close{width:auto;height:34px;top:10px;right:10px;padding:0 10px 0 14px;border-radius:17px;border:1px solid var(--line);background:var(--panel2);color:var(--text);
+.addr{font-size:15px;color:var(--muted)}
+.close{position:absolute;cursor:pointer;width:auto;height:34px;top:10px;right:10px;padding:0 10px 0 14px;border-radius:17px;border:1px solid var(--line);background:var(--panel2);color:var(--text);
   font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;line-height:1}
 .close span,.barclose span{font-size:20px;line-height:1;margin-top:-2px;color:var(--muted)}
 .mapbar .tl .barclose{display:flex;align-items:center;gap:5px;padding:0 8px 0 10px}
@@ -159,7 +159,6 @@ a{color:var(--accent)}
 /* світла тема */
 :root[data-theme=light]{--bg:#f2f4f7;--panel:#ffffff;--panel2:#e8ecf1;--line:#d3d9e1;--text:#14181f;--muted:#5a6676;--accent:#b7860b;--glass:rgba(255,255,255,.92)}
 :root{--glass:rgba(20,24,31,.9)}
-.hint{background:var(--glass)}
 :root[data-theme=light] .iconbtn,:root[data-theme=light] .brand{box-shadow:0 2px 10px rgba(0,0,0,.18)}
 :root[data-theme=light] .strip .past{opacity:.45}
 :root[data-theme=light] .nowm{background:#14181f;box-shadow:0 0 0 1px #fff}
@@ -194,14 +193,12 @@ a{color:var(--accent)}
 .home button{border:0;background:none;color:var(--muted);font-size:22px;width:36px;height:36px;cursor:pointer}
 .bars{display:flex;align-items:flex-end;gap:3px;height:90px;margin:10px 0 2px}
 .bars div{flex:1;background:var(--off);border-radius:3px 3px 0 0;min-height:2px;position:relative}
-.bars div.today{opacity:.55}
 .bars div.none{background:var(--line)}
 .blab{display:flex;gap:3px;font-size:10px;color:var(--muted)}
 .blab span{flex:1;text-align:center}
 .seg{display:flex;gap:6px;margin:8px 0}
 .seg button{flex:1;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:14px}
 .seg button.on{background:var(--panel2);color:var(--text);border-color:var(--muted);font-weight:600}
-.panel textarea{width:100%;min-height:90px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:15px/1.4 inherit;padding:10px 12px;flex:none}
 .btnp{display:block;width:100%;height:48px;border-radius:12px;border:0;background:var(--accent);color:#14181f;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer;flex:none}
 .empty{color:var(--muted);font-size:14px}
 </style>
@@ -380,7 +377,7 @@ function loadSchedule(){
   return fetch(LIVE+"schedule.json"+t,{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.json()})
     .catch(function(){return fetch("data/schedule.json"+t,{cache:"no-store"}).then(function(r){return r.json()})}).then(function(d){
     SCHED=d; updSub(); if(curQ&&$("queueP").classList.contains("open")) openQueue(curQ,true);
-    $("aboutBody").innerHTML=(d.notice?"<pre>"+esc(d.notice)+"</pre>":"")+"<p>Дата графіка: "+d2+". Оновлення на сайті обленерго: "+esc(d.source_updated||"невідомо")+".</p>";
+    $("aboutBody").innerHTML=(d.notice?"<pre>"+esc(d.notice)+"</pre>":"")+"<p>Дата графіка: "+dmy(d.date)+". Оновлення на сайті обленерго: "+esc(d.source_updated||"невідомо")+".</p>";
     redrawDots(); if(lastResult) showResult(lastResult,true);
   }).catch(function(e){ if(e) console.warn("графік:",e); if(!SCHED){ $("sub").className="warn"; $("sub").textContent="Не вдалося завантажити графік, пробую ще раз…" } clearTimeout(loadSchedule.t); loadSchedule.t=setTimeout(loadSchedule,15000) });
 }
@@ -425,7 +422,8 @@ function activeEvent(rem,sp,st,h){
   var now=Date.now()/1000, ev=eventsFor(rem,sp,st,h).filter(function(e){return e.from<=now&&(e.kind==="acc"||e.to>=now)});
   return ev.filter(function(e){return e.kind==="acc"})[0]||ev[0]||null;
 }
-function fmtT(t){var p={};new Intl.DateTimeFormat("uk",{timeZone:"Europe/Kyiv",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(t*1000)).forEach(function(x){p[x.type]=x.value});
+var FMT_T=new Intl.DateTimeFormat("uk",{timeZone:"Europe/Kyiv",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+function fmtT(t){var p={};FMT_T.formatToParts(new Date(t*1000)).forEach(function(x){p[x.type]=x.value});
   var today=kyivNow().date.slice(8,10)===p.day; return (today?"":p.day+"."+p.month+" ")+p.hour+":"+p.minute}
 // фактичний стан черги за оперативними даними: "off", "on" або null (немає певності)
 function liveState(q){
@@ -445,6 +443,12 @@ function codeInfo(code){ // "3.2" або "3.2ю"
   return {q:q, legal:legal, row:SCHED&&SCHED.grid?SCHED.grid[q]:null};
 }
 function stateNow(row){ if(!row||!schedFresh()) return null; return row.charAt(Math.min(47,Math.floor(kyivNow().min/30)))==="1"?"off":"on" }
+// стан будинку зараз: аварія чи ремонт (acc/plan), інакше фактичний стан черги, інакше графік (on/off), null якщо невідомо
+function houseState(rem,sp,st,h,codes){
+  var ae=activeEvent(rem,sp,st,h); if(ae) return ae.kind;
+  var ci=codeInfo(codes[0]), s=stateNow(ci.row), lv=liveState(ci.q);
+  return lv&&s?lv:s;
+}
 function intervals(row){var out=[],s=-1;for(var i=0;i<=48;i++){var x=i<48&&row.charAt(i)==="1";if(x&&s<0)s=i;if(!x&&s>=0){out.push([s,i]);s=-1}}return out}
 
 /* ---------- карта ---------- */
@@ -484,7 +488,6 @@ map.attributionControl.setPrefix(false);
 window.svitloMap=map;
 var dots=L.layerGroup().addTo(map), nums=L.layerGroup().addTo(map), pin=null, lastResult=null, renderer=L.canvas({padding:.3});
 
-function ring(lat,lon,a){var r=[];for(var i=0;i<a.length;i+=2)r.push([lat+a[i]/1e6,lon+a[i+1]/1e6]);return r}
 function inRing(lat,lon,r){var c=false;for(var i=0,j=r.length-1;i<r.length;j=i++){var yi=r[i][0],xi=r[i][1],yj=r[j][0],xj=r[j][1];if((yi>lat)!==(yj>lat)&&lon<(xj-xi)*(lat-yi)/(yj-yi)+xi)c=!c}return c}
 function polyCenter(r){var a=0,b=0;for(var i=0;i<r.length;i++){a+=r[i][0];b+=r[i][1]}return [a/r.length,b/r.length]}
 function cellKey(lat,lon){return Math.floor(lat*TS)+"_"+Math.floor(lon*TS)}
@@ -494,7 +497,7 @@ function loadCell(k){
   if(cellCache[k]) return cellCache[k];
   return cellCache[k]=fetch("data/pts/"+k+".json").then(function(r){return r.json()}).then(function(d){
     var la0=d.o[0], lo0=d.o[1];
-    d.pts=d.p.map(function(a){var n=d.n[d.s[a[2]][0]];return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, rem:n[0], sp:n[1], st:d.s[a[2]][1], h:a[3], codes:orderCodes(a[4].split("|")), poly:a[5]?(d.v===2?ring2:ring)((la0+a[0])/1e5,(lo0+a[1])/1e5,a[5]):null, inf:a[6]?1:0}});
+    d.pts=d.p.map(function(a){var n=d.n[d.s[a[2]][0]];return {lat:(la0+a[0])/1e5, lon:(lo0+a[1])/1e5, rem:n[0], sp:n[1], st:d.s[a[2]][1], h:a[3], codes:orderCodes(a[4].split("|")), poly:a[5]?ring2((la0+a[0])/1e5,(lo0+a[1])/1e5,a[5]):null, inf:a[6]?1:0}});
     return d;
   }).catch(function(){cellCache[k]=null;return null});
 }
@@ -509,23 +512,19 @@ function redrawDots(){
   if(map.getZoom()<16||!CELLS) return;
   var b=map.getBounds().pad(.15), c=map.getCenter();
   cellsAround(c.lat,c.lng,Math.max(b.getNorth()-b.getSouth(),.002)/2).then(function(cells){
-    dots.clearLayers(); nums.clearLayers(); var n=0, drawn={}, nl=0, lab=map.getZoom()>=16, vb=map.getBounds(), taken=[];
+    dots.clearLayers(); nums.clearLayers(); var n=0, drawn={}, nl=0, vb=map.getBounds(), taken=[];
     cells.forEach(function(cell){cell.pts.forEach(function(p){
       if((!p.h&&!p.poly)||n>7000||!b.contains([p.lat,p.lon])) return; n++;
       var q0=codeInfo(p.codes[0]).q, st, col;
       if(VIEW.queues){ col=QCOL[q0]||"#667"; st="q" }
       else if(VIEW.slot!=null){ var g=gridDay(q0,VIEW.day); st=g?(g.charAt(VIEW.slot)==="1"?"off":"on"):null }
-      else{
-        st=stateNow(codeInfo(p.codes[0]).row); var ae=activeEvent(p.rem,p.sp,p.st,p.h);
-        var lv=liveState(q0); if(lv&&st) st=lv;
-        if(ae) st=ae.kind;
-      }
+      else st=houseState(p.rem,p.sp,p.st,p.h,p.codes);
       if(!col) col=st==="off"?"#f0524f":st==="on"?"#35c26b":st==="acc"?"#f59e0b":st==="plan"?"#7c8aff":"#667";
       if(p.poly){var pk=p.poly[0][0].toFixed(6)+p.poly[0][1].toFixed(6)+p.poly.length; if(drawn[pk]) return; drawn[pk]=1}
       if(p.poly) L.polygon(p.poly,{renderer:renderer,weight:1,color:st==="q"?"rgba(0,0,0,.45)":st==="off"?"#b3302e":st==="on"?"#1f8a48":st==="acc"?"#b06f05":st==="plan"?"#4a57c9":"#445",fillColor:col,fillOpacity:p.inf?.55:.8,interactive:false}).addTo(dots);
       else L.circleMarker([p.lat,p.lon],{renderer:renderer,radius:map.getZoom()>=18?6:4,weight:1,color:"#fff",opacity:p.inf?.6:1,fillOpacity:p.inf?.6:.95,fillColor:col,interactive:false}).addTo(dots);
       // номери будинків поверх зафарбованих контурів (лише зблизька, як у svitlo-od)
-      if(lab&&p.h&&nl<350&&vb.contains([p.lat,p.lon])){ var cc=p.poly?polyCenter(p.poly):[p.lat,p.lon];
+      if(p.h&&nl<350&&vb.contains([p.lat,p.lon])){ var cc=p.poly?polyCenter(p.poly):[p.lat,p.lon];
         // на дрібних масштабах номери не мають налазити один на одного: пропускаємо той, що перекриває вже поставлений
         var pt=map.latLngToContainerPoint(cc), hw=String(p.h).length*4.6+4, hh=10, hit=false;
         for(var t=0;t<taken.length;t++){var o=taken[t]; if(Math.abs(o[0]-pt.x)<o[2]+hw&&Math.abs(o[1]-pt.y)<hh*2){hit=true;break}}
@@ -606,8 +605,7 @@ function goToAddress(r){
 function orderCodes(c){return c.slice().sort(function(a,b){return (/ю$/.test(a)?1:0)-(/ю$/.test(b)?1:0)||a.localeCompare(b)})}
 function dedupe(codes){var plain={};codes.forEach(function(c){if(!/ю$/.test(c))plain[c]=1});return codes.filter(function(c){return !(/ю$/.test(c)&&plain[c.slice(0,-1)])})}
 function loadRem(k){
-  var idx=remIndex?Promise.resolve(remIndex):fetch("data/index.json").then(function(r){return r.json()}).then(function(d){return remIndex=d});
-  return idx.then(function(ix){return remCache[k]||(remCache[k]=fetch("data/"+ix[k].file).then(function(r){return r.json()}))});
+  return loadRem0().then(function(ix){return remCache[k]||(remCache[k]=fetch("data/"+ix[k].file).then(function(r){return r.json()}))});
 }
 function setPin(lat,lon,cls){
   if(pin) map.removeLayer(pin);
@@ -699,9 +697,8 @@ function track(n){try{if(window.umami&&umami.track)umami.track(n)}catch(e){}}
 function showResult(r,quiet){
   if(!quiet) track("Картка: "+(r.h?"будинок":"вулиця"));
   lastResult=r; r.codes=orderCodes(r.codes);
-  var first=stateNow(codeInfo(r.codes[0]).row)||"", evs=eventsFor(r.rem,r.sp,r.st,r.h), ae=activeEvent(r.rem,r.sp,r.st,r.h), now=Date.now()/1000;
-  var lv0=liveState(codeInfo(r.codes[0]).q); if(lv0&&first) first=lv0;
-  if(r.lat!=null) setPin(r.lat,r.lon,ae?ae.kind:first);
+  var evs=eventsFor(r.rem,r.sp,r.st,r.h), now=Date.now()/1000;
+  if(r.lat!=null) setPin(r.lat,r.lon,houseState(r.rem,r.sp,r.st,r.h,r.codes)||"");
   var html='<div class="addr">'+(r.st?esc(r.sp)+', <b>'+esc(r.st)+(r.h?", "+esc(r.h):"")+'</b>':'<b>'+esc(r.sp)+'</b>')+'</div>';
   if(r.note) html+='<div class="note">'+esc(r.note)+'</div>';
   evs.forEach(function(e){
@@ -740,9 +737,9 @@ function toggleHome(r){
   ls("svitlo.homes",hs); showResult(r,true);
 }
 function addrState(h){
-  var ae=activeEvent(h.rem,h.sp,h.st,h.h); if(ae) return [ae.kind,ae.kind==="acc"?"Аварійне відключення":"Планові роботи"];
-  var c=orderCodes(h.codes)[0], ci=codeInfo(c); if(ci.nosched) return ["on","Не вимикається за графіком"];
-  var st=stateNow(ci.row), lv=liveState(ci.q); if(lv&&st) st=lv;
+  var codes=orderCodes(h.codes), ci=codeInfo(codes[0]), st=houseState(h.rem,h.sp,h.st,h.h,codes);
+  if(st==="acc"||st==="plan") return [st,st==="acc"?"Аварійне відключення":"Планові роботи"];
+  if(ci.nosched) return ["on","Не вимикається за графіком"];
   if(!st) return ["","Графік на сьогодні не опубліковано"];
   var row=ci.row, slot=Math.min(47,Math.floor(kyivNow().min/30)), j=slot, cur=row.charAt(slot); while(j<48&&row.charAt(j)===cur) j++;
   return [st,(st==="off"?"Світла немає":"Світло є")+(j<48?(st==="off"?", з'явиться о ":", вимкнуть о ")+hm(j):"")+" · підчерга "+ci.q];
@@ -886,7 +883,7 @@ $("btnAcc").onclick=function(){track("Де аварії");openPanel("accP");rend
 $("btnHome").onclick=function(){track("Мої адреси");renderHomes();openPanel("homesP")};
 
 /* ---------- перелік аварій ---------- */
-var accTab=0;
+var accTab=0, accRows=[];
 $("tabAcc").onclick=function(){accTab=0;this.className="on";$("tabPlan").className="";renderAcc()};
 $("tabPlan").onclick=function(){accTab=1;this.className="on";$("tabAcc").className="";renderAcc()};
 $("accFilter").oninput=function(){renderAcc()};
@@ -910,18 +907,18 @@ function renderAcc(){
   var groups={}, names={}, bare=function(n){return norm(n).replace(/^(м\.|с\.|селище|смт\.?|місто|село)\s*/,"")};
   items.forEach(function(i){var k=bare(i.sp)+"|"+i.rem;(groups[k]=groups[k]||[]).push(i);if(!names[k]||!i.raw)names[k]=i.sp});
   var keys=Object.keys(groups).sort(function(a,b){var za=/^житомир\|/.test(a)?0:1,zb=/^житомир\|/.test(b)?0:1;return za-zb||a.localeCompare(b,"uk")});
-  window._accRows=[];
+  accRows=[];
   box.innerHTML=keys.map(function(k,gi){
     var g=groups[k].sort(function(a,b){return a.st.localeCompare(b.st,"uk")}), p=k.split("|");
     return '<details class="grp"'+(keys.length<=3||q?" open":"")+'><summary>'+esc(names[k])+' <span>'+esc(p[1])+' РЕМ · '+g.length+'</span></summary>'+g.map(function(i){
-      var id=window._accRows.push(i)-1, hs=i.hs&&i.hs!=="0"?i.hs.split(",").join(", "):"";
+      var id=accRows.push(i)-1, hs=i.hs&&i.hs!=="0"?i.hs.split(",").join(", "):"";
       var when=accTab?fmtT(i.from)+" – "+fmtT(i.to):"з "+fmtT(i.from)+(i.to?(i.to<now?", термін відновлення минув":", відновлення орієнтовно "+fmtT(i.to)):"");
       return '<button type="button" class="row'+(i.pt?"":" nomap")+'" data-i="'+id+'"><b>'+esc(i.st)+(hs?", "+esc(hs.length>70?hs.slice(0,70)+"…":hs):"")+'</b><small>'+(i.note?"<em>"+esc(i.note)+"</em> · ":"")+esc(when)+(i.pt?"":" · немає на карті")+'</small></button>';
     }).join("")+'</details>';
   }).join("")||'<p style="color:var(--muted)">Записів немає.</p>';
 }
 $("accList").onclick=function(e){
-  var b=e.target.closest(".row"); if(!b) return; var i=window._accRows[+b.dataset.i]; if(!i||!i.pt) return;
+  var b=e.target.closest(".row"); if(!b) return; var i=accRows[+b.dataset.i]; if(!i||!i.pt) return;
   $("accP").classList.remove("open"); $("hint").style.opacity=0;
   map.setView([i.pt[0],i.pt[1]],i.pt[2]===0?15:18,{animate:false});
   if(i.pt[2]===2) lookup(i.pt[0],i.pt[1]);
