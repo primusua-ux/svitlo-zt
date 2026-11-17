@@ -329,6 +329,21 @@ a{color:var(--accent)}
 (function(){
 "use strict";
 var $=function(id){return document.getElementById(id)};
+// Перенесення збережених даних зі старої адреси (сторінка «Сайт переїхав» на Netlify передає їх у ?m=...).
+// Адреси зливаються з уже збереженими тут, тема береться лише якщо тут її ще не обирали.
+var MIGRATED=0;
+(function(){
+  try{
+    var q=new URLSearchParams(location.search), m=q.get("m"); if(!m) return;
+    var d=JSON.parse(decodeURIComponent(escape(atob(m.replace(/-/g,"+").replace(/_/g,"/")))));
+    var cur=JSON.parse(localStorage.getItem("svitlo.homes")||"[]"), id=function(h){return [h.rem,h.sp,h.st,h.h].join("|")}, have={};
+    cur.forEach(function(h){have[id(h)]=1});
+    (d.h||[]).forEach(function(h){ if(h&&h.rem&&h.codes&&!have[id(h)]){cur.push(h);have[id(h)]=1;MIGRATED++} });
+    localStorage.setItem("svitlo.homes",JSON.stringify(cur));
+    if(d.t&&!localStorage.getItem("svitlo.theme")) localStorage.setItem("svitlo.theme",JSON.stringify(d.t));
+  }catch(e){ console.warn("перенесення даних:",e&&e.message) }
+  try{ history.replaceState(null,"",location.pathname+location.hash) }catch(e){}
+})();
 var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
 var SCHED=null, CELLS=null, cellCache={}, remIndex=null, remCache={};
 var LIVE="https://raw.githubusercontent.com/primusua-ux/svitlo-zt/live/", OUT=null, OUTIDX={};
@@ -979,6 +994,7 @@ setInterval(loadHistory,60*60*1000);
 var opened=openHash();
 if(!opened&&homes().length){ openAddr(homes()[0]); opened=true }
 if(opened) $("hint").style.display="none";
+if(MIGRATED) setTimeout(function(){toast(MIGRATED===1?"Збережену адресу перенесено зі старого сайту":"Збережені адреси перенесено зі старого сайту ("+MIGRATED+")")},1200);
 if("serviceWorker" in navigator&&location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(function(){});
 setInterval(function(){updSub();if(VIEW.slot==null)redrawDots();if(lastResult)showResult(lastResult,true)},60*1000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden){loadSchedule();loadOutages()}});

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Світло є? переїхав на svitloe.net</title>
+<meta name="description" content="Карта відключень світла Житомирщини тепер за адресою svitloe.net">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://svitloe.net/">
+<meta property="og:title" content="Світло є? Карта відключень Житомирщини">
+<meta property="og:description" content="Сайт переїхав на svitloe.net">
+<meta property="og:image" content="https://svitloe.net/og.png">
+<meta property="og:url" content="https://svitloe.net/">
+<meta name="theme-color" content="#14181f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%2314181f'/%3E%3Cpath d='M256 92c-70 0-126 55-126 124 0 46 25 78 49 103 16 17 25 34 25 54v21h104v-21c0-20 9-37 25-54 24-25 49-57 49-103 0-69-56-124-126-124z' fill='%23f6c343'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#14181f;--panel:#1d232c;--line:#2c3440;--text:#eef2f6;--muted:#9aa7b5;--accent:#f6c343}
+@media (prefers-color-scheme: light){:root{--bg:#f2f4f7;--panel:#fff;--line:#d3d9e1;--text:#14181f;--muted:#5a6676;--accent:#b7860b}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+main{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px 20px calc(24px + env(safe-area-inset-bottom))}
+.card{width:100%;max-width:420px;text-align:center}
+.icon{width:84px;height:84px;margin:0 auto 18px;display:block}
+h1{font-size:26px;line-height:1.2;margin:0 0 10px}
+h1 b{color:var(--accent)}
+p{margin:0 0 14px;color:var(--muted)}
+.domain{display:inline-block;margin:6px 0 20px;padding:10px 18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font-size:22px;font-weight:700;letter-spacing:.3px;color:var(--text)}
+.go{display:block;width:100%;height:54px;line-height:54px;border-radius:14px;background:#f6c343;color:#14181f;font-size:18px;font-weight:700;text-decoration:none}
+.go:active{transform:scale(.98)}
+.count{margin-top:12px;font-size:14px}
+.note{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;text-align:left}
+.note li{margin:6px 0}
+.ok{color:#35c26b}
+.stop{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:14px;cursor:pointer;padding:6px}
+</style>
+</head>
+<body>
+<main>
+<div class="card">
+  <svg class="icon" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#14181f"/><path d="M256 92c-70 0-126 55-126 124 0 46 25 78 49 103 16 17 25 34 25 54v21h104v-21c0-20 9-37 25-54 24-25 49-57 49-103 0-69-56-124-126-124z" fill="#f6c343"/><rect x="204" y="404" width="104" height="22" rx="11" fill="#f6c343"/><rect x="220" y="436" width="72" height="20" rx="10" fill="#f6c343"/><path d="M268 150l-58 92h44l-12 70 58-94h-44z" fill="#14181f"/></svg>
+  <h1>Світло <b>є?</b> переїхав</h1>
+  <p>Карта відключень Житомирщини тепер живе за новою, короткою адресою:</p>
+  <div class="domain">svitloe.net</div>
+  <a class="go" id="go" href="https://svitloe.net/">Перейти на svitloe.net</a>
+  <p class="count" id="count">Автоматичний перехід за <b id="sec">6</b> с · <button class="stop" id="stop">залишитися тут</button></p>
+  <div class="note">
+    <ul>
+      <li id="homesNote">Ваші збережені адреси й тема перейдуть на новий сайт автоматично.</li>
+      <li>Оновіть закладку в браузері на <b>svitloe.net</b>.</li>
+      <li>Якщо сайт був встановлений на головний екран, видаліть стару іконку й встановіть сайт заново з нової адреси.</li>
+    </ul>
+  </div>
+</div>
+</main>
+<script>
+(function(){
+  var NEW="https://svitloe.net/", homes=[], theme=null;
+  try{ homes=JSON.parse(localStorage.getItem("svitlo.homes")||"[]")||[] }catch(e){}
+  try{ theme=JSON.parse(localStorage.getItem("svitlo.theme")||"null") }catch(e){}
+  // збережені адреси й тему передаємо новому сайту в посиланні (там вони зливаються з тамтешніми)
+  var q="";
+  if(homes.length||theme){
+    try{ q="?m="+btoa(unescape(encodeURIComponent(JSON.stringify({h:homes,t:theme})))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"") }catch(e){}
+  }
+  // посилання на адресу чи підчергу (#a=..., #q=...) зберігається; інших сторінок на сайті немає, тож шлях не потрібен
+  var url=NEW+q+location.hash;
+  document.getElementById("go").href=url;
+  var note=document.getElementById("homesNote");
+  if(homes.length){ note.innerHTML='<span class="ok">✓</span> '+(homes.length===1?"Ваша збережена адреса перейде":"Ваші збережені адреси ("+homes.length+") перейдуть")+" на новий сайт автоматично." }
+  else note.style.display="none";
+  // старий service worker і кеші цього домену більше не потрібні
+  try{ if(navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})}) }catch(e){}
+  try{ if(window.caches) caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})}) }catch(e){}
+  var n=6, t=setInterval(function(){ n--; document.getElementById("sec").textContent=n; if(n<=0){ clearInterval(t); location.replace(url) } },1000);
+  document.getElementById("stop").onclick=function(){ clearInterval(t); document.getElementById("count").textContent="Автоматичний перехід скасовано." };
+})();
+</script>
+</body>
+</html>
