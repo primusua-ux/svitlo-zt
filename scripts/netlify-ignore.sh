@@ -13,10 +13,12 @@
 #   4. Усе інше (графік, службові файли, скрипти) деплой не запускає ніколи.
 # Відкладені зміни підхоплює наступний коміт після спливу інтервалу.
 
-PAGE="index.html sw.js manifest.webmanifest icons og.png vendor netlify.toml scripts/netlify-ignore.sh"
-DATA="data/pts data/geo data/rem data/index.json"
-PAGE_H=72     # сторінка: не частіше ніж раз на 3 доби
-DATA_H=336    # база адрес: не частіше ніж раз на 14 діб
+# Після переїзду на svitloe.net Netlify публікує лише сторінку «Сайт переїхав» (moved/),
+# тож деплоїться тільки вона, одразу після зміни. Сайт і дані на Netlify більше не потрапляють.
+PAGE="moved netlify.toml scripts/netlify-ignore.sh"
+DATA=""
+PAGE_H=0      # сторінка переїзду: одразу після зміни
+DATA_H=336
 
 HEAD_REF="${COMMIT_REF:-HEAD}"
 BASE="${CACHED_COMMIT_REF:-}"
@@ -48,7 +50,7 @@ if ! git diff --quiet "$BASE" "$HEAD_REF" -- $PAGE; then
   [ "$age_h" -ge "$PAGE_H" ] && deploy "сторінка змінилась, попередній деплой $age_h год тому"
   skip "сторінка змінилась, але попередній деплой лише $age_h год тому (поріг $PAGE_H)"
 fi
-if ! git diff --quiet "$BASE" "$HEAD_REF" -- $DATA; then
+if [ -n "$DATA" ] && ! git diff --quiet "$BASE" "$HEAD_REF" -- $DATA; then
   [ "$age_h" -ge "$DATA_H" ] && deploy "база адрес змінилась, попередній деплой $age_h год тому"
   skip "змінилась лише база адрес, попередній деплой $age_h год тому (поріг $DATA_H)"
 fi
