@@ -98,8 +98,6 @@ table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:ta
 th{text-align:left;font-weight:600;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:5px 8px;border-bottom:1px solid var(--line)}
 td.n,th.n{text-align:right}
-td small{display:block;color:var(--muted);font-size:12px}
-.more{margin-top:8px;width:100%}
 tr.hl td{background:var(--panel2)}
 .heat td.n{min-width:3em}
 .daysel{margin:0 0 8px}
@@ -166,16 +164,6 @@ details li{margin:4px 0}
       </div>
     </section>
 
-    <section id="live">
-      <h2>Фактичний стан підчерг</h2>
-      <p class="sub">Частка будинків підчерги, яких сервіс обленерго «Чому немає світла?» показує вимкненими за графіком. Сайт довіряє цим даним замість графіка лише нижче 3% (є світло) або від 60% (вимкнено), пунктирні лінії.</p>
-      <div class="card">
-        <p id="liveLead" style="margin:0 0 8px"></p>
-        <div class="legend"><span><i style="background:var(--off)"></i>вимкнено</span><span><i style="background:var(--grey)"></i>невизначено</span><span><i style="background:var(--on)"></i>є світло</span></div>
-        <div class="chart" id="liveChart"></div>
-      </div>
-    </section>
-
     <section id="events">
       <h2>Аварії та планові роботи</h2>
       <p class="sub">Той самий перелік, що у вікні «Де аварії»: аварії й планові роботи, які не завершились понад годину тому. Один запис означає одну вулицю. Торкніться смуги, щоб перейти глибше.</p>
@@ -189,18 +177,16 @@ details li{margin:4px 0}
       </div>
       <div class="grid2" style="margin-top:10px">
         <div class="card"><h3>Причини</h3><p class="sub">Як вказано обленерго. Торкніться, щоб відфільтрувати.</p><div class="chart" id="causeChart"></div><p class="hint" id="unmatched"></p></div>
-        <div class="card"><h3 id="listTitle">Записи</h3><p class="sub" id="listSub">Спершу ті, що тривають, з найбільшою кількістю будинків.</p><div class="scroll"><table id="evTable"></table></div><button class="btn more" id="listMore" hidden></button></div>
       </div>
     </section>
 
     <section id="base">
-      <h2>База адрес і карта</h2>
-      <p class="sub">База адрес обленерго (оновлюється щодня) та скільки будинків з неї знайдено на карті OpenStreetMap.</p>
+      <h2>База адрес</h2>
+      <p class="sub">База адрес обленерго, оновлюється щодня.</p>
       <div class="grid2">
         <div class="card"><h3>Будинки за підчергами</h3>
           <div class="legend"><span><i style="background:var(--grey)"></i>житлові</span><span><i style="background:var(--plan)"></i>нежитлові («ю»)</span></div>
           <div class="chart" id="qHouses"></div><p class="hint">Будинок із житловим і нежитловим кодом рахується двічі.</p></div>
-        <div class="card"><h3 id="covTitle">Будинки з координатами</h3><p class="sub" id="covLead"></p><div class="chart" id="covChart"></div><p class="hint" id="covMore"></p></div>
       </div>
     </section>
 
@@ -211,8 +197,6 @@ details li{margin:4px 0}
         <li>Запис аварії чи планових робіт: одна вулиця в одному населеному пункті. Одна аварія на підстанції дає кілька записів.</li>
         <li>«Тривають»: час початку настав, а прогнозний час відновлення ще ні. «Мало завершитись»: прогноз минув, але обленерго ще не прибрало запис.</li>
         <li>Підчерги аварії: підчерги будинків, названих у записі, за базою адрес. Записи, не зіставлені з базою, фільтр підчерги не проходять.</li>
-        <li>Фактичний стан підчерги: частка будинків підчерги з бази, яких сервіс обленерго показує вимкненими за графіком.</li>
-        <li>Покриття карти: будинки бази, яким знайдено будинок чи точку в OpenStreetMap. Решта на карті сірі, але пошук за адресою працює.</li>
         <li>Статистика збирається щогодини з тих самих даних, що показує карта.</li>
       </ul>
     </details>
@@ -227,7 +211,7 @@ details li{margin:4px 0}
 var URL_STATS = "https://raw.githubusercontent.com/primusua-ux/svitlo-zt/live/stats.json";
 var QUEUES = ["1.1","1.2","2.1","2.2","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
 var $ = function (id) { return document.getElementById(id); };
-var LIST_N = 15, ST = null, EV = [], F = {rem: null, sp: null, q: null, kind: "all", active: false, cause: null}, DAY = null;
+var ST = null, EV = [], F = {rem: null, sp: null, q: null, kind: "all", active: false, cause: null}, DAY = null;
 function track(n) { try { if (window.umami && umami.track) umami.track(n); } catch (e) {} }
 
 /* ---------- формати ---------- */
@@ -335,7 +319,7 @@ function evOk(e, skip) {
 function setF(patch, why) {
   for (var k in patch) F[k] = patch[k];
   if (patch.rem !== undefined && patch.sp === undefined) F.sp = null;
-  LIST_N = 15; writeHash(); syncControls(); render();
+  writeHash(); syncControls(); render();
   if (why) track("Статистика: " + why);
 }
 function writeHash() {
@@ -426,9 +410,8 @@ function renderSummary() {
   var accA = acc.filter(function (e) { return e.status === "триває"; });
   var plan = EV.filter(function (e) { return e.kind === 1 && evOk(e, {kind: 1, active: 1}); });
   var accH = accA.reduce(function (s, e) { return s + e.houses; }, 0);
-  var base = 0, cH = 0, cC = 0;
+  var base = 0;
   ST.addr.forEach(function (a) { if (!areaOk(ST.rems[a[0]], a[1])) return; for (var c in a[2]) if (!F.q || c.replace("ю", "") === F.q) base += a[2][c]; });
-  ST.cov.forEach(function (c) { if (areaOk(ST.rems[c[0]], c[1])) { cH += c[2]; cC += c[3]; } });
   var today = (ST.hours[day] || {}), maxQ = null;
   QUEUES.forEach(function (q) { if (today[q] != null && (maxQ == null || today[q] > today[maxQ])) maxQ = q; });
   var d = hT != null && hP != null ? hT - hP : null;
@@ -443,8 +426,7 @@ function renderSummary() {
     ["Аварії тривають", n0(accA.length), "записів (вулиць) із " + n0(acc.length) + " у переліку"],
     ["Будинків в аваріях", n0(accH), "названих у записах, що тривають"],
     ["Планові роботи", n0(plan.length), "записів, не завершених понад годину тому"],
-    ["Будинків у базі", n0(base), F.q ? "підчерги " + F.q + (F.sp || F.rem ? ", " + (F.sp || F.rem + " РЕМ") : "") : (F.sp || F.rem ? (F.sp || F.rem + " РЕМ") : "уся область")],
-    ["На карті", pct(cH ? cC / cH : null, 1), n0(cC) + " із " + n0(cH) + " будинків мають координати"]
+    ["Будинків у базі", n0(base), F.q ? "підчерги " + F.q + (F.sp || F.rem ? ", " + (F.sp || F.rem + " РЕМ") : "") : (F.sp || F.rem ? (F.sp || F.rem + " РЕМ") : "уся область")]
   ];
   $("tiles").innerHTML = tiles.map(function (t) { return '<div class="tile"><div class="k">' + esc(t[0]) + '</div><div class="v">' + t[1] + '</div><div class="d">' + t[2] + "</div></div>"; }).join("");
   $("gavCard").className = "card alert" + (ST.gav.active ? "" : " ok");
@@ -497,21 +479,6 @@ function renderHours() {
     }).join("") + "</tbody>";
 }
 
-function renderLive() {
-  var sl = snapshotSlot(), g = ST.grid[ST.date] || {}, decided = 0, agree = 0;
-  var rows = QUEUES.concat(["0"]).filter(function (q) { return ST.live[q] != null; }).map(function (q) {
-    var v = ST.live[q], verdict = v >= 0.6 ? "вимкнено" : v <= 0.03 ? "є світло" : "невизначено";
-    var sch = q === "0" ? null : sl == null ? null : (g[q] || "").charAt(Math.floor(sl)) === "1";
-    if (q !== "0" && verdict !== "невизначено") { decided++; if (sch != null && (verdict === "вимкнено") === sch) agree++; }
-    return {label: q === "0" ? "не вимик." : q, parts: [{v: v, c: verdict === "вимкнено" ? "var(--off)" : verdict === "є світло" ? "var(--on)" : "var(--grey)"}], text: pct(v),
-      dim: F.q && F.q !== q,
-      tip: [q === "0" ? "Не вимикаються за графіком" : "Підчерга " + q, pct(v, 1) + " будинків вимкнено", "сайт вважає: " + verdict, sch == null ? "" : "за графіком: " + (sch ? "вимкнено" : "є світло")],
-      click: q === "0" ? null : function () { setF({q: F.q === q ? null : q}, "підчерга з фактичного стану"); }};
-  });
-  $("liveLead").textContent = "На " + when(ST.at) + " однозначних підчерг " + decided + " із 12, з графіком збігаються " + agree + ".";
-  hbars($("liveChart"), rows, {max: 1, refs: [{v: 0.03, label: "3%", a: "start"}, {v: 0.6, label: "60%"}], aria: "Фактичний стан підчерг"});
-}
-
 function group(list, key) {
   var m = {}; list.forEach(function (e) { var k = key(e); var r = m[k] || (m[k] = {k: k, acc: 0, plan: 0, houses: 0, active: 0}); if (e.kind === 0) r.acc++; else r.plan++; r.houses += e.houses; if (e.status === "триває") r.active++; });
   return Object.keys(m).map(function (k) { return m[k]; });
@@ -548,18 +515,6 @@ function renderEvents() {
   }), {aria: "Записи за причиною"});
   var un = list.filter(function (e) { return !e.matched; }).length;
   $("unmatched").textContent = list.length ? "Не зіставлено з вулицями бази: " + pct(un / list.length, 1) + " записів. Вони є в переліку, але не на карті." : "";
-  // перелік записів
-  var rows = list.slice().sort(function (a, b) { return (a.status === "триває" ? 0 : 1) - (b.status === "триває" ? 0 : 1) || b.houses - a.houses; });
-  var n = Math.min(LIST_N, rows.length);
-  $("listTitle").textContent = "Записи: " + n0(rows.length);
-  $("listSub").hidden = !rows.length;
-  $("evTable").innerHTML = rows.length ? "<thead><tr><th>Адреса</th><th>Що і коли</th><th>Підчерги</th><th class=\"n\">Будинків</th></tr></thead><tbody>" +
-    rows.slice(0, n).map(function (e) {
-      return "<tr><td>" + esc(e.st) + (F.sp ? "" : "<small>" + esc(e.sp) + "</small>") + "</td><td>" + (e.kind === 0 ? "аварія" : "планові роботи") + ", " + e.status +
-        "<small>" + when(e.t0) + "–" + when(e.t1) + "</small></td><td>" + esc(e.qs.map(function (q) { return q === "0" ? "без графіка" : q; }).join(", ") || "–") + '</td><td class="n">' + n0(e.houses) + "</td></tr>";
-    }).join("") + "</tbody>" : '<tbody><tr><td class="empty">Немає записів для цих фільтрів</td></tr></tbody>';
-  $("listMore").hidden = rows.length <= n;
-  $("listMore").textContent = "Показати ще " + n0(Math.min(30, rows.length - n)) + " із " + n0(rows.length - n);
 }
 
 function renderBase() {
@@ -571,24 +526,11 @@ function renderBase() {
       tip: [q === "0" ? "Не вимикаються за графіком" : "Підчерга " + q, n0(r.res) + " житлових", n0(r.non) + " нежитлових"],
       click: q === "0" ? null : function () { setF({q: F.q === q ? null : q}, "підчерга з бази"); }};
   }), {aria: "Будинки бази за підчергами"});
-  var level = F.sp ? "sp" : F.rem ? "sp" : "rem", g = {};
-  ST.cov.forEach(function (c) { var rem = ST.rems[c[0]]; if (!areaOk(rem, c[1])) return; var k = level === "rem" ? rem : c[1]; var r = g[k] || (g[k] = {k: k, h: 0, c: 0}); r.h += c[2]; r.c += c[3]; });
-  var rows = Object.keys(g).map(function (k) { return g[k]; });
-  var tH = rows.reduce(function (s, r) { return s + r.h; }, 0), tC = rows.reduce(function (s, r) { return s + r.c; }, 0);
-  $("covTitle").textContent = level === "rem" ? "Будинки з координатами за РЕМ" : F.sp ? "Будинки з координатами, " + F.sp : "Найбільші населені пункти, " + F.rem + " РЕМ";
-  $("covLead").textContent = "Координати мають " + n0(tC) + " із " + n0(tH) + " будинків (" + pct(tH ? tC / tH : null, 1) + ").";
-  if (level === "rem") rows.sort(function (a, b) { return b.c / b.h - a.c / a.h; }); else rows.sort(function (a, b) { return b.h - a.h; });
-  var shown = rows.slice(0, 20);
-  hbars($("covChart"), shown.map(function (r) {
-    return {label: r.k, parts: [{v: r.h ? r.c / r.h : 0, c: "var(--on)"}], text: pct(r.h ? r.c / r.h : 0), tip: [r.k, pct(r.h ? r.c / r.h : 0, 1) + " з координатами", n0(r.c) + " із " + n0(r.h) + " будинків"],
-      click: F.sp ? null : function () { setF(level === "rem" ? {rem: r.k} : {sp: r.k}, "перехід глибше"); }};
-  }), {max: 1, aria: $("covTitle").textContent});
-  $("covMore").textContent = rows.length > 20 ? "Показано 20 найбільших із " + rows.length + "." : "";
 }
 
 function render() {
   hideTip();
-  renderSummary(); renderHeat(); renderHours(); renderLive(); renderEvents(); renderBase();
+  renderSummary(); renderHeat(); renderHours(); renderEvents(); renderBase();
 }
 
 /* ---------- завантаження ---------- */
@@ -622,7 +564,6 @@ var rz; addEventListener("resize", function () { clearTimeout(rz); rz = setTimeo
 var toF = $("toF");
 toF.onclick = function () { scrollTo({top: 0, behavior: "smooth"}); };
 new IntersectionObserver(function (es) { toF.classList.toggle("show", started && !es[0].isIntersecting); }).observe($("filters"));
-$("listMore").onclick = function () { LIST_N += 30; renderEvents(); };
 $("daySel").onclick = function (e) { var b = e.target.closest("[data-d]"); if (b) { DAY = b.dataset.d; renderHeat(); } };
 try { matchMedia("(prefers-color-scheme: light)").addEventListener("change", applyTheme); } catch (e) {}
 </script>
