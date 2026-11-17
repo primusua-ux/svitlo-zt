@@ -325,8 +325,6 @@ a{color:var(--accent)}
 </div>
 
 <script src="vendor/leaflet/leaflet.js"></script>
-<script src="vendor/maplibre/maplibre-gl.js"></script>
-<script src="vendor/maplibre/leaflet-maplibre-gl.js"></script>
 <script>
 (function(){
 "use strict";
@@ -338,10 +336,13 @@ var NEAR_M=45, STREET_M=75, FAR_M=150, PLACES=[], TS=10, HIST=null;
 var VIEW={queues:false, slot:null, day:0};   // режими карти: підчерги; інший час (slot 0..47, day 0 сьогодні, 1 завтра)
 
 /* ---------- час у Києві ---------- */
+// Викликається для кожного будинку під час малювання, тож форматувальник створюється один раз,
+// а результат кешується на секунду (раніше це з'їдало більшу частину часу перемальовки)
+var KYIV_FMT=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Kyiv",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}), KYIV_C=null, KYIV_T=-1;
 function kyivNow(){
-  var p={}; new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Kyiv",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"})
-    .formatToParts(new Date()).forEach(function(x){p[x.type]=x.value});
-  return {date:p.year+"-"+p.month+"-"+p.day, min:(+p.hour)*60+(+p.minute)};
+  var t=Math.floor(Date.now()/1000); if(t===KYIV_T) return KYIV_C;
+  var p={}; KYIV_FMT.formatToParts(new Date()).forEach(function(x){p[x.type]=x.value});
+  KYIV_T=t; KYIV_C={date:p.year+"-"+p.month+"-"+p.day, min:(+p.hour)*60+(+p.minute)}; return KYIV_C;
 }
 function hm(slot){var m=slot*30;return ("0"+Math.floor(m/60)).slice(-2)+":"+("0"+m%60).slice(-2)}
 function schedFresh(){return SCHED && SCHED.date===kyivNow().date}
@@ -458,7 +459,12 @@ function setBase(){
   }catch(e){ console.warn("векторна карта недоступна:",e&&e.message); rasterBase() }
 }
 map.attributionControl.setPrefix(false);
-setBase();
+// бібліотека векторної карти важка (понад 1 МБ), тож вантажиться після запуску сторінки, а не перед ним:
+// кнопки, пошук і будинки з'являються одразу, підкладка трохи згодом
+(function loadGL(){
+  function add(src,ok){var e=document.createElement("script");e.src=src;e.onload=ok;e.onerror=function(){console.warn("не завантажилась "+src);rasterBase()};document.head.appendChild(e)}
+  add("vendor/maplibre/maplibre-gl.js",function(){add("vendor/maplibre/leaflet-maplibre-gl.js",setBase)});
+})();
 window.svitloMap=map;
 var dots=L.layerGroup().addTo(map), nums=L.layerGroup().addTo(map), pin=null, lastResult=null, renderer=L.canvas({padding:.3});
 
