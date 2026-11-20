@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f5f3f">
+<meta name="referrer" content="no-referrer">
+<title>Світло є? Планування занять</title>
+<meta name="description" content="Планування дистанційних занять з урахуванням графіка відключень: інструмент викладача. Дані про здобувачів зберігаються лише на пристрої викладача.">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="plan.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{--bg:#f3f5f4;--card:#fff;--tx:#17211c;--mut:#5f6d66;--ln:#dde3e0;--acc:#1f7a4d;--acc2:#e7f4ec;--on:#2e9e5b;--off:#d64541;--auto:#e0a526;--unk:#a9b3ae;--warn:#fff4d6;--warnb:#e5b94a;--bad:#fde8e7;--r:14px;--safe-b:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#111614;--card:#1b2320;--tx:#e6ece9;--mut:#93a19a;--ln:#2c3833;--acc:#3fb37a;--acc2:#1d3328;--warn:#3a3218;--warnb:#a8882e;--bad:#3d1f1e}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:calc(70px + var(--safe-b))}
+header{position:sticky;top:0;z-index:20;background:var(--acc);color:#fff;padding:10px 14px 8px;box-shadow:0 1px 6px rgba(0,0,0,.2)}
+header h1{margin:0;font-size:17px;font-weight:650}
+header .sub{font-size:12px;opacity:.9;margin-top:2px}
+main{padding:12px;max-width:900px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:var(--r);padding:12px 14px;margin-bottom:12px}
+.card h2{margin:0 0 8px;font-size:16px}
+.card h3{margin:12px 0 6px;font-size:14px}
+.mut{color:var(--mut);font-size:13px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1 1 auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{display:block;font-size:13px;color:var(--mut);margin:8px 0 3px}
+input,select,textarea{width:100%;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:10px;padding:9px 10px}
+input[type=checkbox]{width:auto;transform:scale(1.25);margin-right:8px}
+textarea{min-height:90px}
+button{font:inherit;border:0;border-radius:10px;padding:10px 14px;background:var(--acc);color:#fff;font-weight:600;cursor:pointer}
+button.sec{background:var(--acc2);color:var(--acc)}
+button.ghost{background:transparent;color:var(--acc);padding:6px 8px}
+button.danger{background:var(--bad);color:var(--off)}
+button:disabled{opacity:.5}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:var(--safe-b)}
+nav button{flex:1;background:none;color:var(--mut);border-radius:0;padding:8px 2px 7px;font-size:11px;font-weight:500;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button svg{width:22px;height:22px;fill:currentColor}
+nav button.on{color:var(--acc)}
+.tab{display:none}.tab.on{display:block}
+.chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--acc2);color:var(--acc);margin:2px 4px 2px 0;white-space:nowrap}
+.chip.w{background:var(--warn);color:inherit}
+.chip.b{background:var(--bad);color:var(--off)}
+.list{margin:0;padding:0;list-style:none}
+.list li{border-top:1px solid var(--ln);padding:9px 0;display:flex;gap:10px;align-items:center}
+.list li:first-child{border-top:0}
+.list .grow{flex:1;min-width:0}
+.list .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.dot{width:12px;height:12px;border-radius:50%;flex:0 0 12px;background:var(--unk)}
+.dot.on{background:var(--on)}.dot.off{background:var(--off)}.dot.auto{background:var(--auto)}
+.banner{border-radius:12px;padding:10px 12px;margin-bottom:12px;background:var(--warn);border:1px solid var(--warnb);font-size:14px}
+.banner.bad{background:var(--bad);border-color:var(--off)}
+.decision{border-radius:12px;padding:12px;margin:6px 0 10px;border:2px solid var(--on);background:var(--acc2)}
+.decision.mixed{border-color:var(--auto);background:var(--warn)}
+.decision.groups{border-color:#3b7dd8;background:rgba(59,125,216,.1)}
+.decision.async{border-color:var(--off);background:var(--bad)}
+.decision b.big{font-size:18px;display:block;margin-bottom:4px}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.kpi div{background:var(--bg);border-radius:10px;padding:8px 10px}
+.kpi b{display:block;font-size:20px}
+.kpi span{font-size:12px;color:var(--mut)}
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:0 -2px}
+.days button{flex:0 0 auto;background:var(--bg);color:var(--tx);border:1px solid var(--ln);padding:7px 10px;text-align:left;font-weight:500;min-width:96px}
+.days button.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc) inset}
+.days small{display:block;color:var(--mut);font-size:11px}
+.days .k{font-weight:700}
+.hm{overflow-x:auto}
+.hm table{border-collapse:separate;border-spacing:1px;font-size:11px;width:100%;table-layout:fixed}
+.hm td{height:18px;padding:0;border-radius:2px;min-width:6px}
+.hm col.c{width:auto}
+.hm td.n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:4px;font-size:12px;background:none}
+.hm td.q{color:var(--mut);background:none;padding-right:2px;font-size:11px}
+.hm td.au{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 2px,transparent 2px 5px)}
+.hm td.win{outline:2px solid var(--tx);outline-offset:-1px}
+.hm th{font-weight:400;color:var(--mut);font-size:10px;text-align:left;padding:0;overflow:visible;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mut);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:4px}
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center}
+.sheet.open{display:flex}
+.sheet .box{background:var(--card);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:14px 16px calc(16px + var(--safe-b))}
+.sheet .box h2{margin:0 0 6px;font-size:17px}
+#lock{position:fixed;inset:0;z-index:80;background:var(--bg);display:none;align-items:center;justify-content:center;padding:20px}
+#lock.open{display:flex}
+#lock .card{max-width:380px;width:100%}
+.toast{position:fixed;left:50%;bottom:calc(84px + var(--safe-b));transform:translateX(-50%);background:#222;color:#fff;padding:9px 14px;border-radius:10px;font-size:14px;z-index:90;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.on{opacity:1}
+pre.msg{white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:10px;font:13px/1.45 inherit;margin:6px 0}
+.att li label{display:flex;align-items:center;margin:0;color:var(--tx);font-size:15px;flex:1}
+svg.chart{width:100%;height:auto;display:block}
+.small{font-size:12px}
+.right{text-align:right}
+details summary{cursor:pointer;color:var(--acc);font-weight:600;margin:6px 0}
+.hint{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;min-width:20px;padding:0;margin-left:6px;border-radius:50%;background:var(--acc2);color:var(--acc);font-size:12px;font-weight:700;line-height:1;vertical-align:1px;flex:0 0 auto}
+#pop{position:fixed;z-index:100;max-width:min(320px,calc(100vw - 16px));background:#22302a;color:#fff;font-size:14px;line-height:1.45;padding:10px 12px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.35);display:none}
+#pop.on{display:block}
+</style>
+</head>
+<body>
+<header><h1>Світло є? Планування занять</h1><div class="sub" id="hdrSub">Завантаження…</div></header>
+
+<main>
+<!-- ПЛАН -->
+<section class="tab on" id="t-plan">
+  <div id="planBanners"></div>
+  <div class="card">
+    <h2>Що плануємо</h2>
+    <label>Навчальні взводи (можна кілька для спільного заняття)<button type="button" class="hint" data-h="plat" aria-label="Пояснення">?</button></label>
+    <div id="planPlatoons" class="row"></div>
+    <div class="grid2">
+      <div><label for="planDur">Тривалість, хв<button type="button" class="hint" data-h="dur" aria-label="Пояснення">?</button></label><input id="planDur" type="number" min="30" max="360" step="5"></div>
+      <div><label for="planDays">Горизонт, днів<button type="button" class="hint" data-h="days" aria-label="Пояснення">?</button></label><input id="planDays" type="number" min="1" max="14"></div>
+    </div>
+    <div class="btns"><button id="planGo">Розрахувати</button><button class="sec" id="planRefresh">Оновити дані «Світло є?»</button></div>
+  </div>
+  <div id="planOut"></div>
+</section>
+
+<!-- ЗАРАЗ -->
+<section class="tab" id="t-now">
+  <div id="nowBanners"></div>
+  <div class="card">
+    <h2>Перевірка перед заняттям</h2>
+    <p class="mut">Фактичний стан на цю хвилину з урахуванням аварій на адресах і оперативних даних обленерго.</p>
+    <label>Взвод<button type="button" class="hint" data-h="nowPl" aria-label="Пояснення">?</button></label><select id="nowPlatoon"></select>
+    <div class="btns"><button id="nowGo">Перевірити</button></div>
+  </div>
+  <div id="nowOut"></div>
+</section>
+
+<!-- ВЗВОДИ -->
+<section class="tab" id="t-people">
+  <div class="card">
+    <h2>Навчальні взводи</h2>
+    <ul class="list" id="plList"></ul>
+    <div class="btns"><button id="plAdd">Додати взвод</button><button class="sec" id="plDemo">Демо-взвод зі статті</button></div>
+  </div>
+  <div id="plDetail"></div>
+  <div class="card">
+    <h2>Анкета для здобувачів</h2>
+    <p class="mut">Текст, який можна надіслати у чат взводу. Відповіді вносите сюди вручну або списком.</p>
+    <pre class="msg" id="survey"></pre>
+    <div class="btns"><button class="sec" id="surveyCopy">Скопіювати</button></div>
+  </div>
+</section>
+
+<!-- ЖУРНАЛ -->
+<section class="tab" id="t-log">
+  <div class="card">
+    <h2>Показники ефективності</h2>
+    <div id="kpi"></div>
+    <p class="mut small">R: частка синхронних занять, проведених у запланований час за участі не менше K<sub>м</sub> групи (ф. 5). A: середня частка синхронної участі (ф. 6). δ: середня похибка прогнозу покриття (ф. 7). P: частка перенесених занять.</p>
+  </div>
+  <div class="card">
+    <h2>Заняття</h2>
+    <ul class="list" id="logList"></ul>
+    <div class="btns"><button class="sec" id="logCsv">Експорт журналу (CSV)</button></div>
+  </div>
+</section>
+
+<!-- НАЛАШТУВАННЯ -->
+<section class="tab" id="t-set">
+  <div class="card"><h2>Методика</h2><div id="setMethod"></div></div>
+  <div class="card"><h2>Викладач</h2><p class="mut">Якщо вказати, додаток не пропонуватиме час, коли світла немає у вас.</p><div id="setTeacher"></div></div>
+  <div class="card"><h2>Дані «Світло є?»</h2><div id="setData"></div></div>
+  <div class="card">
+    <h2>Безпека та резервна копія</h2>
+    <p class="mut">Усі дані про здобувачів зберігаються тільки в пам'яті цього браузера на цьому пристрої. Назовні додаток лише завантажує загальнодоступні графіки і переліки аварій, нічого про здобувачів не передає.</p>
+    <div id="secState"></div>
+    <div class="btns">
+      <button id="secPw">Пароль</button>
+      <button class="sec" id="secLock">Заблокувати</button>
+    </div>
+    <div class="btns">
+      <button class="sec" id="bkExport">Зберегти копію у файл</button>
+      <button class="sec" id="bkImport">Відновити з файлу</button>
+      <input type="file" id="bkFile" accept=".json,application/json" hidden>
+    </div>
+    <div class="btns"><button class="danger" id="wipe">Видалити всі дані</button></div>
+  </div>
+  <p class="mut small" style="text-align:center">Методика: Приймачук О. В., Добровінський В. П. Інтерактивний онлайн-додаток «Світло є?» як засіб підтримки планування дистанційного навчання в умовах енергетичної нестабільності. ЖВІ, 2026.<br>© 2026 Приймачук О. В.</p>
+</section>
+</main>
+
+<nav id="nav">
+  <button data-t="plan" class="on"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14zM7 12h5v5H7z"/></svg>План</button>
+  <button data-t="now"><svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Зараз</button>
+  <button data-t="people"><svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5C15 14.2 10.3 13 8 13zm8 0c-.3 0-.6 0-1 .1a4.2 4.2 0 0 1 2 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5z"/></svg>Взводи</button>
+  <button data-t="log"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z"/></svg>Журнал</button>
+  <button data-t="set"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5z"/></svg>Налаштування</button>
+</nav>
+
+<div class="sheet" id="sheet"><div class="box" id="sheetBox"></div></div>
+
+<div id="lock"><div class="card">
+  <h2>Дані захищено паролем</h2>
+  <p class="mut">Введіть пароль, щоб відкрити список здобувачів.<button type="button" class="hint" data-h="lock" aria-label="Пояснення">?</button></p>
+  <input id="lockPw" type="password" autocomplete="current-password">
+  <div class="btns"><button id="lockGo">Відкрити</button></div>
+  <p class="mut small" id="lockErr"></p>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<div id="pop" role="tooltip"></div>
+
+<script>
+"use strict";
+/* ================= базові утиліти ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
+const QUEUES=["1.1","1.2","2.1","2.2","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
+const LS_DB="svp_db_v1", LS_PUB="svp_pub_v1";
+const fx=(v,n=2)=>v==null||isNaN(v)?"н/д":v.toFixed(n).replace(".",",");
+const pct=v=>v==null||isNaN(v)?"н/д":Math.round(v*100)+" %";
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),2600)}
+
+/* ================= час (Київ) ================= */
+const FMT=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Kyiv",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+function kyiv(ts){const p={};FMT.formatToParts(ts!=null?new Date(ts*1000):new Date()).forEach(x=>p[x.type]=x.value);return {date:p.year+"-"+p.month+"-"+p.day,min:(+p.hour)*60+(+p.minute)}}
+function addDay(d,n){const t=new Date(d+"T12:00:00Z");t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)}
+function hm(min){min=Math.round(min);return String(Math.floor(min/60)%24).padStart(2,"0")+":"+String(min%60).padStart(2,"0")}
+function hmEnd(min){return min>=1440?"24:00":hm(min)}
+function parseHM(s){const m=/^(\d{1,2})[:.](\d{2})$/.exec(String(s).trim());return m?(+m[1])*60+(+m[2]):null}
+const WD=["нд","пн","вт","ср","чт","пт","сб"];
+function dLabel(d){const t=new Date(d+"T12:00:00Z");return d.slice(8,10)+"."+d.slice(5,7)+" "+WD[t.getUTCDay()]}
+function relDay(d){const t=kyiv().date;return d===t?"сьогодні":d===addDay(t,1)?"завтра":dLabel(d)}
+
+/* ================= налаштування за замовчуванням ================= */
+const DEF_S={
+  Ks:0.75, Km:0.5, cover:0.7, maxGroups:3, dur:90, from:"08:00", to:"20:00", step:30, starts:"", horizon:3,
+  useLive:true, useAcc:true, fcDays:14, names:true,
+  teacher:{code:"",auto:false},
+  live:"https://raw.githubusercontent.com/primusua-ux/svitlo-zt/live/",
+  data:"https://raw.githubusercontent.com/primusua-ux/svitlo-zt/main/data/"
+};
+// пояснення до кожного поля простою мовою
+const HELP={
+  plat:"Позначте взвод, для якого шукаєте час заняття. Якщо позначити кілька, додаток шукатиме спільний час для всіх разом.",
+  dur:"Скільки триває заняття. Від цього залежить, скільки часу поспіль у здобувача має бути світло. Пара триває 90 хвилин.",
+  days:"На скільки днів уперед показати найкращий час. Сьогодні й завтра рахуються за офіційним графіком, наступні дні приблизно, за статистикою попередніх днів.",
+  nowPl:"Взвод, який треба перевірити саме зараз, безпосередньо перед заняттям.",
+  lock:"Пароль, який ви встановили в налаштуваннях. Без нього список здобувачів не відкрити.",
+  plName:"Як називатиметься взвод у списку. Наприклад, «2 навчальний взвод».",
+  sName:"Прізвище та ініціали або позивний. Бачите лише ви, нікуди не передається.",
+  sLink:"Здобувач відкриває svitloe.net, знаходить свій будинок, натискає «Поділитися» в картці будинку і надсилає вам посилання. Вставте його сюди: адреса й підчерга визначаться самі, а додаток бачитиме аварії саме на цій адресі.",
+  sCode:"Номер черги відключень за графіком обленерго. Заповнюється сам із посилання. Змінюйте вручну, лише якщо знаєте точно, наприклад коли посилання немає. «0» означає, що будинок за графіком не вимикають.",
+  sAuto:"Позначте, якщо здобувач може повноцінно навчатися онлайн, коли в нього вдома немає світла: має чим живити ноутбук чи смартфон і має інтернет, який не зникає разом зі світлом. Такий здобувач вважається доступним у будь-який час.",
+  sNote:"Будь-яка ваша позначка, наприклад телефон для зв'язку. Бачите лише ви.",
+  imp:"Кожен здобувач з нового рядка: ПІБ і посилання з «Світло є?». Можна просто вставити скопійовані повідомлення з чату. Слово «так» наприкінці рядка означає, що здобувач може навчатися без світла.",
+  mNames:"Якщо увімкнено, у повідомленні буде перелік прізвищ кожної підгрупи. Якщо вимкнено, підгрупи будуть названі номерами підчерг.",
+  lTopic:"Тема заняття для журналу. Можна не заповнювати.",
+  lSt:"Що сталося із заняттям: проведено, перенесено чи скасовано. Від цього залежать показники ефективності.",
+  lAtt:"Позначте тих, хто справді був на занятті. Порівняння з прогнозом показує, наскільки точно додаток планує.",
+  pw1:"Пароль шифрує всі дані про здобувачів на цьому пристрої. Щонайменше 6 символів. Забутий пароль не відновити, тож зробіть резервну копію. Щоб зняти пароль, залиште поле порожнім.",
+  pw2:"Повторіть пароль, щоб не помилитися.",
+  Ks:"Якщо частка взводу, у якої буде світло протягом усього заняття, не менша за це число, додаток радить звичайне заняття для всіх. 0,75 означає три чверті взводу.",
+  Km:"Нижня межа. Якщо частка вища за неї, але нижча за поріг вище, радиться заняття з записом для тих, хто пропустить. Якщо нижча, радиться поділ на підгрупи або самостійна робота з консультацією.",
+  cover:"Для днів, на які графік ще не опубліковано, додаток знає лише ймовірність, що світло буде. Здобувач вважається таким, що зможе бути на занятті, якщо ця ймовірність не нижча за це число. На дні з графіком не впливає.",
+  maxGroups:"Скільки разів за день ви готові провести те саме заняття для різних підгруп.",
+  from:"Найраніший час, коли можна почати заняття.",
+  to:"Час, до якого заняття має закінчитися.",
+  step:"Через скільки хвилин перебирати варіанти початку. 30 хвилин збігається з кроком графіка відключень.",
+  fcDays:"Скільки попередніх днів брати для приблизного прогнозу на дні, коли графік ще не опубліковано.",
+  starts:"Якщо заняття можуть починатися лише в певний час, наприклад за розкладом пар, впишіть цей час через кому. Тоді діапазон і крок вище не використовуються.",
+  useLive:"Обленерго публікує, які підчерги фактично зараз без світла. Якщо це розходиться з графіком, на сьогодні додаток вірить фактичним даним.",
+  useAcc:"Якщо на адресі здобувача аварія чи ремонт, він вважається без світла на цей час. Працює лише для тих, хто надіслав посилання.",
+  "teacher.code":"Ваша власна підчерга. Тоді додаток не запропонує час, коли світла немає у вас. «Не враховувати», якщо ви проводите заняття з місця, де світло є завжди.",
+  "teacher.auto":"Позначте, якщо можете проводити заняття і без світла. Тоді ваша підчерга не обмежує вибір часу.",
+  live:"Адреса, звідки завантажуються графік і перелік аварій. Змінювати не потрібно.",
+  data:"Адреса бази адрес, за якою з посилання визначається підчерга. Змінювати не потрібно."
+};
+const hint=k=>'<button type="button" class="hint" data-h="'+k+'" aria-label="Пояснення">?</button>';
+document.addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest(".hint"), pop=$("pop");
+  if(b){
+    e.preventDefault(); e.stopPropagation();
+    if(pop.classList.contains("on")&&pop.dataset.k===b.dataset.h){pop.classList.remove("on");return}
+    pop.textContent=HELP[b.dataset.h]||""; pop.dataset.k=b.dataset.h; pop.dataset.t=Date.now(); pop.classList.add("on");
+    const r=b.getBoundingClientRect(), w=pop.offsetWidth, hh=pop.offsetHeight;
+    let top=r.bottom+6; if(top+hh>innerHeight-8) top=Math.max(8,r.top-hh-6);
+    pop.style.top=top+"px"; pop.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2))+"px";
+    return;
+  }
+  if(!e.target.closest||!e.target.closest("#pop")) pop.classList.remove("on");
+},true);
+addEventListener("scroll",()=>{const p=$("pop");if(Date.now()-(+p.dataset.t||0)>500)p.classList.remove("on")},true);
+
+/* ================= сховище (локальне, за бажання зашифроване) ================= */
+let DB=null, KEY=null, SALT=null;
+let PUB={archive:{},sched:null,outMeta:null,fetched:0};
+const b64=a=>btoa(String.fromCharCode.apply(null,new Uint8Array(a)));
+const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const CRYPTO_OK=!!(window.crypto&&crypto.subtle);
+async function deriveKey(pw,salt){
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:250000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+async function sealObj(obj){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},KEY,new TextEncoder().encode(JSON.stringify(obj)));
+  return {enc:1,salt:b64(SALT),iv:b64(iv),ct:b64(ct)};
+}
+async function openObj(box,key){
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(box.iv)},key,ub64(box.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+function newDB(){return {v:1,platoons:[],students:[],lessons:[],settings:JSON.parse(JSON.stringify(DEF_S))}}
+function fixDB(d){
+  d.platoons=d.platoons||[];d.students=d.students||[];d.lessons=d.lessons||[];
+  const s=d.settings||{};d.settings=Object.assign(JSON.parse(JSON.stringify(DEF_S)),s);
+  const t=s.teacher||{}; d.settings.teacher={code:t.code||"",auto:!!t.auto};
+  ["net","hours","typOut"].forEach(k=>delete d.settings[k]);
+  d.students.forEach(st=>{if(st.auto==null) st.auto=!!(st.power&&st.power!=="none"&&st.net&&st.net!=="none"); delete st.power; delete st.hours; delete st.net});
+  return d;
+}
+let saveT=null;
+function save(){clearTimeout(saveT);saveT=setTimeout(saveNow,250)}
+async function saveNow(){
+  try{
+    const box=KEY?await sealObj(DB):{enc:0,data:DB};
+    localStorage.setItem(LS_DB,JSON.stringify(box));
+  }catch(e){console.error(e);toast("Не вдалося зберегти дані: "+e.message)}
+}
+function savePub(){try{localStorage.setItem(LS_PUB,JSON.stringify(PUB))}catch(e){/* переповнення: обрізаємо архів */const ks=Object.keys(PUB.archive).sort();ks.slice(0,Math.ceil(ks.length/2)).forEach(k=>delete PUB.archive[k]);try{localStorage.setItem(LS_PUB,JSON.stringify(PUB))}catch(_){}}}
+function loadPub(){try{const p=JSON.parse(localStorage.getItem(LS_PUB)||"null");if(p&&p.archive)PUB=p}catch(e){}}
+const S=()=>DB.settings;
+
+/* ================= дані «Світло є?» ================= */
+let OUT=null, ACC={}, RAWACC=[];
+function hk(h){return String(h).toUpperCase().replace(/\s/g,"").replace(/^(\d+)-([А-ЯІЇЄҐA-Z])$/,"$1$2")}
+async function getJSON(url){const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error(r.status+" "+url);return r.json()}
+async function refreshData(quiet){
+  const t="?t="+Math.floor(Date.now()/60000);
+  let ok=0;
+  try{
+    let sc;
+    try{sc=await getJSON(S().live+"schedule.json"+t)}catch(e){sc=await getJSON("https://svitloe.net/data/schedule.json"+t)}
+    PUB.sched={date:sc.date,source_updated:sc.source_updated,notice:sc.notice,fetched_utc:sc.fetched_utc};
+    if(sc.days) Object.keys(sc.days).forEach(d=>PUB.archive[d]=sc.days[d]);
+    else if(sc.grid&&sc.date) PUB.archive[sc.date]=sc.grid;
+    ok++;
+  }catch(e){console.warn("графік",e)}
+  try{
+    const o=await getJSON(S().live+"outages.json"+t);
+    OUT=o; buildAcc(); PUB.outMeta={updated:o.updated,live:o.live,gav:o.gav}; ok++;
+  }catch(e){console.warn("аварії",e)}
+  // архів не довший за 62 доби
+  const keep=addDay(kyiv().date,-62);Object.keys(PUB.archive).forEach(d=>{if(d<keep)delete PUB.archive[d]});
+  PUB.fetched=Date.now(); savePub(); updHdr();
+  if(!quiet) toast(ok===2?"Дані оновлено":ok?"Оновлено частково":"Немає зв'язку, використано збережені дані");
+  return ok;
+}
+function buildAcc(){
+  ACC={};RAWACC=[];if(!OUT) return;
+  Object.keys(OUT.acc||{}).forEach(k=>{ACC[k]=OUT.acc[k].map(e=>{const hs={};String(e[4]||"").split(",").forEach(h=>{if(h)hs[hk(h)]=1});return {kind:e[0]?"plan":"acc",from:e[1],to:e[2],note:e[3],hs,all:!e[4]||(!!hs["0"]&&Object.keys(hs).length===1)}})});
+  (OUT.raw||[]).forEach(e=>RAWACC.push({kind:e[0]?"plan":"acc",from:e[1],to:e[2],rem:e[5],sp:e[6]}));
+}
+const outFresh=()=>{if(!OUT)return false;const a=Date.now()/1000-OUT.updated;return a<45*60&&a>-300};
+function updHdr(){
+  const s=PUB.sched, el=$("hdrSub"); if(!el) return;
+  const today=kyiv().date;
+  let t=s?("Графік на "+dLabel(s.date)+(PUB.archive[addDay(today,1)]?" і завтра":"")):"Графік ще не завантажено";
+  if(PUB.fetched) t+=" · оновлено "+hm(kyiv(PUB.fetched/1000).min)+(kyiv(PUB.fetched/1000).date!==today?" "+dLabel(kyiv(PUB.fetched/1000).date):"");
+  if(!navigator.onLine) t+=" · офлайн";
+  el.textContent=t;
+}
+function banners(){
+  let h="";const today=kyiv().date;
+  const gav=(OUT&&OUT.gav)||(PUB.outMeta&&PUB.outMeta.gav);
+  if(gav&&gav.active) h+='<div class="banner bad"><b>Діють аварійні відключення за командою «Укренерго».</b> Графік може не застосовуватися, тому в день заняття обов\'язково перевірте фактичний стан у вкладці «Зараз».'+(gav.url?' <a href="'+esc(gav.url)+'" target="_blank" rel="noopener noreferrer">Повідомлення обленерго</a>':"")+'</div>';
+  if(!PUB.archive[today]) h+='<div class="banner">Графіка на сьогодні немає в пам\'яті. Натисніть «Оновити дані «Світло є?»», коли буде зв\'язок.</div>';
+  else if(PUB.fetched&&Date.now()-PUB.fetched>2*3600e3) h+='<div class="banner">Дані оновлювались '+Math.round((Date.now()-PUB.fetched)/3600e3)+' год тому. Графік міг змінитися.</div>';
+  if(PUB.sched&&PUB.sched.notice) h+='<details class="card"><summary>Повідомлення обленерго</summary><pre class="msg">'+esc(PUB.sched.notice)+'</pre></details>';
+  return h;
+}
+
+/* ================= модель доступності здобувача =================
+   s_q(t) за статтею замінено на e_i(t), доступність конкретного здобувача:
+   1, якщо є світло або здобувач може навчатися без світла (енергонезалежність
+   разом з незалежним інтернетом); інакше 0. Для днів без графіка s_q(t) це
+   ймовірність наявності світла за попередніми днями. */
+function rowOf(date,q){
+  if(q==="0") return "0".repeat(48);
+  const a=PUB.archive[date];return a&&a[q]?a[q]:null;
+}
+// частка часу зі світлом за попередні дні (прогноз, коли графіка на дату ще немає)
+function forecast(date,q){
+  const ds=Object.keys(PUB.archive).filter(d=>d<date).sort().slice(-S().fcDays);
+  const rows=ds.map(d=>rowOf(d,q)).filter(Boolean); if(rows.length<3) return null;
+  const p=new Array(48).fill(0);rows.forEach(r=>{for(let i=0;i<48;i++)if(r[i]==="0")p[i]++});
+  return {p:p.map(v=>v/rows.length),n:rows.length};
+}
+function liveState(q){
+  if(!S().useLive||!OUT||!OUT.live||OUT.live[q]==null||q==="0") return null;
+  const age=Date.now()/1000-OUT.updated; if(age>25*60||age<-300) return null;
+  const row=rowOf(kyiv().date,q); if(!row) return null;
+  const m=kyiv().min, slot=Math.min(47,Math.floor(m/30)); let j=slot; while(j>0&&row[j-1]===row[slot]) j--;
+  if(j>0&&m-j*30<45) return null;
+  const v=OUT.live[q]; return v>=0.6?"off":v<=0.03?"on":null;
+}
+function addrKey(a){return a?a.rem+"|"+a.sp+"|"+a.st:""}
+function eventsFor(st){
+  if(!S().useAcc||!st.addr||!outFresh()) return [];
+  const a=ACC[addrKey(st.addr)]; if(!a) return [];
+  const now=Date.now()/1000, key=st.addr.h?hk(st.addr.h):null;
+  return a.filter(e=>(e.all||(key&&e.hs[key]))&&(e.kind==="acc"||e.to>now-3600)).map(e=>{
+    let to=e.to; if(e.kind==="acc") to=Math.max(to||0,now+3600);
+    return Object.assign({},e,{to});
+  });
+}
+function settlementWarn(st){
+  if(!S().useAcc||!st.addr||!outFresh()) return null;
+  const sp=String(st.addr.sp).replace(/^(м\.|с\.|смт|селище|сел\.)\s*/i,"").trim().toLowerCase();
+  const now=Date.now()/1000;
+  return RAWACC.find(e=>e.rem===st.addr.rem&&String(e.sp).trim().toLowerCase()===sp&&e.from<=now&&(e.kind==="acc"||e.to>now))||null;
+}
+function slotsOf(ev,date){
+  const f=kyiv(ev.from),t=kyiv(ev.to); if(f.date>date||t.date<date) return null;
+  const a=f.date<date?0:Math.floor(f.min/30), b=t.date>date?47:Math.ceil(t.min/30)-1;
+  return b>=a?[a,b]:null;
+}
+// базовий стан «є світло» по слотах: масив 0..1 або null
+function onArray(p,date){
+  const code=p.code; if(!code) return {err:"не вказано підчергу"};
+  const row=rowOf(date,code); let on, src="sched", fcN=0;
+  if(row){on=[...row].map(c=>c==="0"?1:0)}
+  else if(date>kyiv().date){const f=forecast(date,code); if(!f) return {err:"немає графіка на "+dLabel(date)}; on=f.p; src="fc"; fcN=f.n}
+  else return {err:"немає графіка на "+dLabel(date)};
+  const notes=[];
+  const today=kyiv().date;
+  if(src==="sched"&&date===today){
+    const ls=liveState(code); const cur=Math.min(47,Math.floor(kyiv().min/30));
+    if(ls&&(ls==="on")!==(on[cur]===1)){
+      let j=cur; const v=on[cur]; while(j<48&&on[j]===v){on[j]=ls==="on"?1:0;j++}
+      notes.push(ls==="off"?"за оперативними даними підчерга зараз без світла":"за оперативними даними світло зараз є");
+    }
+  }
+  if(p.addr){
+    eventsFor(p).forEach(ev=>{const r=slotsOf(ev,date); if(!r) return; for(let i=r[0];i<=r[1];i++) on[i]=0;
+      notes.push((ev.kind==="acc"?"аварія":"планові роботи")+" на адресі до "+hm(kyiv(ev.to).min)+(kyiv(ev.to).date!==date?" "+dLabel(kyiv(ev.to).date):""))});
+  }
+  return {on,src,fcN,notes};
+}
+function availability(p,date){
+  const b=onArray(p,date); if(b.err) return b;
+  const A=!!p.auto, e=new Array(48), au=new Array(48).fill(false);
+  for(let t=0;t<48;t++){const pp=b.on[t]; e[t]=A?1:pp; au[t]=A&&pp<1}
+  return {e,on:b.on,au,src:b.src,fcN:b.fcN,notes:b.notes};
+}
+
+/* ================= розрахунок за методикою ================= */
+function startCandidates(date,dur){
+  const s=S(); let list=[];
+  if(String(s.starts).trim()){list=String(s.starts).split(/[,;\s]+/).map(parseHM).filter(v=>v!=null)}
+  else{const a=parseHM(s.from)??480,b=parseHM(s.to)??1200,st=Math.max(5,+s.step||30);for(let m=a;m+dur<=b;m+=st) list.push(m)}
+  list=list.filter(m=>m+dur<=1440).sort((x,y)=>x-y);
+  if(date===kyiv().date){const n=kyiv().min+10;list=list.filter(m=>m>=n)}
+  return list;
+}
+const winSlots=(m,dur)=>{const a=Math.floor(m/30),b=Math.floor((m+dur-1)/30);const r=[];for(let i=a;i<=b;i++)r.push(i);return r};
+function planDay(people,date,dur){
+  const s=S();
+  const av={}, unknown=[];
+  people.forEach(p=>{const a=availability(p,date); if(a.err) unknown.push({p,err:a.err}); else av[p.id]=a});
+  const known=people.filter(p=>av[p.id]); const N=people.length;
+  let src=known.some(p=>av[p.id].src==="fc")?"fc":"sched";
+  let starts=startCandidates(date,dur);
+  // доступність викладача
+  let tAv=null;
+  if(s.teacher.code){tAv=availability(Object.assign({id:"_t"},s.teacher),date); if(tAv.err) tAv=null}
+  const res=[];
+  starts.forEach(m=>{
+    const W=winSlots(m,dur); let sum=0, avg=0; const mins={}, cov=[];
+    known.forEach(p=>{const e=av[p.id].e; let mn=1, a=0; W.forEach(t=>{mn=Math.min(mn,e[t]);a+=e[t]}); mins[p.id]=mn; sum+=mn; avg+=a/W.length; if(mn>=s.cover) cov.push(p.id)});
+    let tOk=true; if(tAv){let mn=1;W.forEach(t=>mn=Math.min(mn,tAv.e[t])); tOk=mn>=s.cover}
+    res.push({m,K:N?sum/N:0,avg:N?avg/N:0,mins,cov,tOk});
+  });
+  const ok=known.length?res.filter(r=>r.tOk):[];
+  const best=ok.slice().sort((a,b)=>b.K-a.K||b.avg-a.avg||a.m-b.m)[0]||null;
+  // задача покриття множини: жадібний вибір вікон, що не перетинаються
+  const groups=[]; const U=new Set(known.map(p=>p.id));
+  for(let g=0;g<(+s.maxGroups||1)&&U.size;g++){
+    let pick=null,gain=0;
+    ok.forEach(r=>{
+      if(groups.some(x=>Math.abs(x.m-r.m)<dur)) return;
+      const gn=r.cov.filter(id=>U.has(id)).length;
+      if(gn>gain||(gn===gain&&gn>0&&pick&&r.K>pick.K)){gain=gn;pick=r}
+    });
+    if(!pick||!gain) break;
+    const ids=pick.cov.filter(id=>U.has(id)); ids.forEach(id=>U.delete(id));
+    groups.push({m:pick.m,ids,K:pick.K});
+  }
+  groups.sort((a,b)=>a.m-b.m);
+  const gCov=N?(N-U.size-unknown.length)/N:0;
+  const rest=[...U];
+  // рішення за пороговими значеннями
+  let mode="async", alt=null;
+  if(!known.length) mode="nodata";
+  else if(!best) mode="none";
+  else if(best.K>=s.Ks) mode="sync";
+  else if(best.K>=s.Km){mode="mixed"; if(groups.length>=2&&gCov>=s.Ks) alt="groups"}
+  else if(groups.length>=2&&gCov>=s.Km) mode="groups";
+  else mode="async";
+  return {date,dur,N,known,unknown,av,res,best,groups,gCov,rest,mode,alt,src,tAv,teacherBlocked:res.length-ok.length};
+}
+
+/* ================= інтерфейс: навігація ================= */
+let curTab="plan";
+$("nav").onclick=e=>{const b=e.target.closest("button");if(!b)return;showTab(b.dataset.t)};
+function showTab(t){
+  curTab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("on",s.id==="t-"+t));
+  ({plan:renderPlanForm,now:renderNowForm,people:renderPeople,log:renderLog,set:renderSettings})[t]();
+  scrollTo(0,0);
+}
+function openSheet(html){$("sheetBox").innerHTML=html;$("sheet").classList.add("open")}
+function closeSheet(){$("sheet").classList.remove("open")}
+$("sheet").onclick=e=>{if(e.target.id==="sheet")closeSheet()};
+const platoon=id=>DB.platoons.find(p=>p.id===id);
+const studentsOf=pid=>DB.students.filter(s=>s.pid===pid).sort((a,b)=>a.name.localeCompare(b.name,"uk"));
+function share(text,title){
+  if(navigator.share) navigator.share({title:title||"Заняття",text}).catch(()=>{});
+  else copy(text);
+}
+function copy(text){
+  (navigator.clipboard&&window.isSecureContext?navigator.clipboard.writeText(text):Promise.reject()).then(()=>toast("Скопійовано"),()=>{
+    const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("Скопійовано")}catch(e){prompt("Скопіюйте:",text)}ta.remove()});
+}
+
+/* ================= вкладка «План» ================= */
+let planSel=new Set(), planResult=null, planDays=null, planDate=null;
+function renderPlanForm(){
+  $("planBanners").innerHTML=banners();
+  const box=$("planPlatoons");
+  if(!DB.platoons.length){box.innerHTML='<p class="mut">Спочатку додайте взвод і здобувачів у вкладці «Взводи».</p>';return}
+  if(![...planSel].some(id=>platoon(id))) planSel=new Set([DB.platoons[0].id]);
+  box.innerHTML=DB.platoons.map(p=>'<label style="flex:0 0 auto;margin:4px 12px 4px 0;color:var(--tx);font-size:15px"><input type="checkbox" data-p="'+p.id+'"'+(planSel.has(p.id)?" checked":"")+'>'+esc(p.name)+' <span class="mut">('+studentsOf(p.id).length+')</span></label>').join("");
+  box.querySelectorAll("input").forEach(i=>i.onchange=()=>{i.checked?planSel.add(i.dataset.p):planSel.delete(i.dataset.p)});
+  $("planDur").value=S().dur; $("planDays").value=S().horizon;
+}
+$("planRefresh").onclick=async()=>{await refreshData();renderPlanForm();if(planDays)runPlan()};
+$("planGo").onclick=()=>{
+  const d=+$("planDur").value, h=+$("planDays").value;
+  if(d>=30&&d<=360) S().dur=d; if(h>=1&&h<=14) S().horizon=h; save(); planDate=null; runPlan();
+};
+function selPeople(){return DB.students.filter(s=>planSel.has(s.pid))}
+function runPlan(){
+  const people=selPeople();
+  if(!people.length){$("planOut").innerHTML='<div class="card mut">У вибраних взводах немає здобувачів.</div>';return}
+  const today=kyiv().date, dur=S().dur;
+  planDays=[];for(let i=0;i<S().horizon;i++) planDays.push(planDay(people,addDay(today,i),dur));
+  if(!planDate||!planDays.find(p=>p.date===planDate)){
+    const withBest=planDays.filter(p=>p.best);
+    planDate=(withBest[0]||planDays[0]).date;
+  }
+  renderPlan();
+}
+const MODE={sync:"Синхронне заняття для всієї групи",mixed:"Змішаний формат",groups:"Поділ на енергетичні підгрупи",async:"Асинхронний формат з консультацією",none:"Немає допустимого часу",nodata:"Немає даних"};
+function renderPlan(){
+  const r=planDays.find(p=>p.date===planDate); planResult=r; const s=S();
+  let h='<div class="card"><h2>Найкращий час по днях</h2><div class="days">';
+  planDays.forEach(p=>{
+    h+='<button data-d="'+p.date+'" class="'+(p.date===planDate?"on":"")+'"><b>'+relDay(p.date)+'</b><small>'+(p.best?hm(p.best.m)+" · K = <span class=k>"+fx(p.best.K)+"</span>":"немає даних")+'</small><small>'+(p.best?(p.src==="fc"?"прогноз":"графік"):"")+'</small></button>';
+  });
+  h+='</div><p class="mut small">Дні з позначкою «прогноз» розраховано за статистикою графіків за попередні дні: графік на них ще не оприлюднено.</p></div>';
+  h+='<div class="card">';
+  h+='<h2>'+esc(relDay(r.date))+', '+dLabel(r.date)+'</h2>';
+  if(r.src==="fc") h+='<div class="banner">Графік на цей день ще не опубліковано. Розрахунок імовірнісний: за '+Math.max(...r.known.map(p=>r.av[p.id].fcN||0),0)+' попередніми днями. Перевірте рішення після оприлюднення графіка.</div>';
+  if(r.unknown.length&&r.mode!=="nodata") h+='<div class="banner">Без даних: '+r.unknown.map(u=>esc(u.p.name)+" ("+esc(u.err)+")").join(", ")+'. Ці здобувачі враховані в N як відсутні.</div>';
+  if(r.teacherBlocked) h+='<p class="mut small">Відкинуто '+r.teacherBlocked+' варіант(и) часу, коли світла немає у викладача.</p>';
+  if(r.mode==="nodata"){h+='<p>Для цього дня немає ні графіка, ні достатньої статистики для прогнозу (потрібно щонайменше 3 доби в архіві, він накопичується з кожним оновленням). Поверніться до розрахунку після оприлюднення графіка.</p></div>';$("planOut").innerHTML=h;bindDays();return}
+  if(r.mode==="none"){h+='<p>Немає допустимого часу початку заняття'+(r.date===kyiv().date?' на решту дня':'')+'. Змініть діапазон у налаштуваннях або тривалість.</p></div>';$("planOut").innerHTML=h;bindDays();return}
+  const b=r.best, end=b.m+r.dur;
+  h+='<div class="decision '+r.mode+'"><b class="big">'+MODE[r.mode]+'</b>';
+  if(r.mode==="sync") h+='Початок о <b>'+hm(b.m)+'</b>, до '+hmEnd(end)+'. K<sub>w</sub> = <b>'+fx(b.K)+'</b> (поріг K<sub>с</sub> = '+fx(s.Ks)+'): прогнозовано участь '+b.cov.length+' з '+r.N+'.';
+  if(r.mode==="mixed") h+='Синхронно о <b>'+hm(b.m)+'</b>-'+hmEnd(end)+' із записом, а для решти асинхронні завдання. K<sub>w</sub> = <b>'+fx(b.K)+'</b>, між K<sub>м</sub> = '+fx(s.Km)+' і K<sub>с</sub> = '+fx(s.Ks)+'.'+(r.alt?'<br>Альтернатива: '+r.groups.length+' підгрупи дадуть покриття '+pct(r.gCov)+' (нижче).':"");
+  if(r.mode==="groups") h+='Жодне спільне вікно не охоплює більше '+pct(b.K)+' групи. Поділ на '+r.groups.length+' підгрупи забезпечує синхронну участь '+pct(r.gCov)+' групи.';
+  if(r.mode==="async") h+='Найкраще спільне вікно о '+hm(b.m)+' дає лише K<sub>w</sub> = '+fx(b.K)+', а підгрупи покривають '+pct(r.gCov)+'. Доцільно надати матеріали асинхронно і провести консультацію о <b>'+hm(b.m)+'</b>.';
+  h+='</div>';
+  if(r.groups.length&&(r.mode==="groups"||r.alt||r.mode==="async")){
+    h+='<h3>Енергетичні підгрупи (задача покриття множини)</h3><ul class="list">';
+    r.groups.forEach((g,i)=>h+='<li><div class="grow"><div class="nm">Підгрупа '+(i+1)+': '+hm(g.m)+'-'+hmEnd(g.m+r.dur)+'</div><div class="mut small">'+g.ids.map(id=>esc(nameOf(id))).join(", ")+'</div></div><span class="chip">'+g.ids.length+'</span></li>');
+    if(r.rest.length) h+='<li><div class="grow"><div class="nm">Асинхронно</div><div class="mut small">'+r.rest.map(id=>esc(nameOf(id))).join(", ")+'</div></div><span class="chip w">'+r.rest.length+'</span></li>';
+    h+='</ul>';
+  }
+  h+='<h3>Коефіцієнт енергетичного покриття за часом початку</h3>'+chart(r);
+  h+='<h3>Доступність здобувачів</h3>'+heatmap(r);
+  h+='<div class="btns"><button id="msgBtn">Повідомлення для взводу</button><button class="sec" id="logBtn">Записати в журнал</button></div>';
+  h+='<details><summary>Чому саме так</summary><p class="mut small">K<sub>w</sub>(t<sub>0</sub>) = (1/N)·Σ min e<sub>i</sub>(t) по інтервалах заняття. Тут e<sub>i</sub>(t) = 1, якщо в здобувача є світло або якщо він може навчатися без світла; інакше 0. Для днів без графіка це ймовірність, що світло буде, за попередніми днями. Здобувач вважається охопленим вікном, якщо min e<sub>i</sub> ≥ '+fx(s.cover)+'. Підгрупи добираються жадібним алгоритмом: щоразу вікно, що охоплює найбільше ще не охоплених, без накладання вікон у часі.</p></details>';
+  h+='</div>';
+  $("planOut").innerHTML=h; bindDays();
+  $("msgBtn").onclick=()=>msgSheet(r);
+  $("logBtn").onclick=()=>addLesson(r);
+}
+function bindDays(){document.querySelectorAll("#planOut .days button").forEach(b=>b.onclick=()=>{planDate=b.dataset.d;renderPlan()})}
+const nameOf=id=>{const s=DB.students.find(x=>x.id===id);return s?s.name:"?"};
+function col(e){if(e==null)return "var(--unk)";const hue=Math.round(e*125);return "hsl("+hue+",62%,"+(e>=.999?"42%":"48%")+")"}
+function chart(r){
+  const s=S(), W=640, H=170, pl=30, pb=22, n=r.res.length; if(!n) return "";
+  const bw=(W-pl-4)/n, y=v=>H-pb-v*(H-pb-8);
+  let g='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Коефіцієнт покриття">';
+  [0,.25,.5,.75,1].forEach(v=>g+='<line x1="'+pl+'" x2="'+W+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="currentColor" stroke-opacity=".12"/><text x="'+(pl-4)+'" y="'+(y(v)+4)+'" font-size="10" text-anchor="end" fill="currentColor" fill-opacity=".6">'+fx(v,v%1?2:0)+'</text>');
+  r.res.forEach((x,i)=>{
+    const c=!x.tOk?"var(--unk)":x.K>=s.Ks?"var(--on)":x.K>=s.Km?"var(--auto)":"var(--off)";
+    const best=r.best&&x.m===r.best.m, grp=r.groups.some(gg=>gg.m===x.m);
+    g+='<rect x="'+(pl+i*bw+1)+'" y="'+y(x.K)+'" width="'+Math.max(1,bw-2)+'" height="'+Math.max(0,H-pb-y(x.K))+'" fill="'+c+'" rx="2"'+(best?' stroke="currentColor" stroke-width="2"':'')+'><title>'+hm(x.m)+': K = '+fx(x.K)+'</title></rect>';
+    if(grp) g+='<text x="'+(pl+i*bw+bw/2)+'" y="'+(y(x.K)-3)+'" font-size="10" text-anchor="middle" fill="currentColor">●</text>';
+    const lbl=n<=16||x.m%60===0;
+    if(lbl&&(n<=16||i%2===0||x.m%120===0)) g+='<text x="'+(pl+i*bw+bw/2)+'" y="'+(H-7)+'" font-size="10" text-anchor="middle" fill="currentColor" fill-opacity=".7">'+hm(x.m)+'</text>';
+  });
+  [["Ks","K с"],["Km","K м"]].forEach(([k,l])=>g+='<line x1="'+pl+'" x2="'+W+'" y1="'+y(s[k])+'" y2="'+y(s[k])+'" stroke="currentColor" stroke-dasharray="4 3" stroke-opacity=".55"/><text x="'+(W-2)+'" y="'+(y(s[k])-3)+'" font-size="10" text-anchor="end" fill="currentColor" fill-opacity=".7">'+l+' = '+fx(s[k])+'</text>');
+  g+='</svg><div class="legend"><span><i style="background:var(--on)"></i>K ≥ K<sub>с</sub></span><span><i style="background:var(--auto)"></i>K<sub>м</sub> ≤ K &lt; K<sub>с</sub></span><span><i style="background:var(--off)"></i>K &lt; K<sub>м</sub></span><span>рамка: найкращий час · ●: підгрупа</span></div>';
+  return g;
+}
+function heatmap(r){
+  const s=S(); const a=Math.floor((parseHM(s.from)??480)/30), b=Math.ceil((parseHM(s.to)??1200)/30);
+  const win=new Set(r.best?winSlots(r.best.m,r.dur):[]);
+  const people=r.known.slice().sort((x,y)=>x.code.localeCompare(y.code)||x.name.localeCompare(y.name,"uk"));
+  let h='<div class="hm"><table><colgroup><col style="width:'+(innerWidth<600?84:150)+'px"><col style="width:28px"></colgroup><tr><th></th><th></th>';
+  const lab=(b-a)>30?4:2; for(let t=a;t<b;t++) h+='<th>'+(t%lab===0?String(t/2).padStart(2,"0"):"")+'</th>';
+  h+='</tr>';
+  people.forEach(p=>{
+    const av=r.av[p.id];
+    h+='<tr><td class="n" title="'+esc(p.name)+'">'+esc(p.name)+'</td><td class="q">'+esc(p.code)+'</td>';
+    for(let t=a;t<b;t++) h+='<td class="'+(av.au[t]?"au ":"")+(win.has(t)?"win":"")+'" style="background-color:'+col(av.e[t])+'" title="'+hm(t*30)+": "+fx(av.e[t])+'"></td>';
+    h+='</tr>';
+  });
+  h+='</table></div><div class="legend"><span><i style="background:'+col(1)+'"></i>світло є</span><span><i style="background:'+col(.7)+';background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 2px,transparent 2px 5px)"></i>без світла, але може навчатися</span><span><i style="background:'+col(0)+'"></i>недоступний</span><span>рамка: найкраще вікно</span></div>';
+  const notes=r.known.filter(p=>r.av[p.id].notes.length);
+  if(notes.length) h+='<p class="mut small">'+notes.map(p=>esc(p.name)+": "+esc(r.av[p.id].notes.join("; "))).join("<br>")+'</p>';
+  return h;
+}
+function planText(r,withNames){
+  const pls=[...new Set(r.known.concat(r.unknown.map(u=>u.p)).map(p=>p.pid))].map(id=>platoon(id)).filter(Boolean).map(p=>p.name).join(", ");
+  const s=S(); let t="Заняття "+dLabel(r.date)+(pls?", "+pls:"")+"\n";
+  const nm=ids=>withNames?": "+ids.map(nameOf).join(", "):" (підчерги "+[...new Set(ids.map(id=>(DB.students.find(x=>x.id===id)||{}).code))].sort().join(", ")+")";
+  if(r.mode==="sync") t+="Формат: синхронне заняття для всіх.\nЧас: "+hm(r.best.m)+"-"+hmEnd(r.best.m+r.dur)+".\n";
+  else if(r.mode==="mixed") t+="Формат: синхронне заняття з записом.\nЧас: "+hm(r.best.m)+"-"+hmEnd(r.best.m+r.dur)+".\nХто не зможе долучитися, виконує завдання асинхронно за записом.\n";
+  else if(r.mode==="groups"){t+="Формат: заняття в підгрупах за графіком відключень.\n";r.groups.forEach((g,i)=>t+="Підгрупа "+(i+1)+", "+hm(g.m)+"-"+hmEnd(g.m+r.dur)+nm(g.ids)+".\n");if(r.rest.length)t+="Асинхронно"+nm(r.rest)+".\n"}
+  else t+="Формат: асинхронно, матеріали в системі дистанційного навчання.\nКонсультація: "+hm(r.best.m)+"-"+hmEnd(r.best.m+r.dur)+".\n";
+  if(r.src==="fc") t+="Час попередній: графік на цей день ще не опубліковано.\n";
+  const qs=[...new Set(r.known.map(p=>p.code).filter(q=>q&&q!=="0"))].sort();
+  t+="\nСвою підчергу і стан світла можна перевірити на https://svitloe.net"+(qs.length===1?"/#q="+qs[0]:"");
+  return t;
+}
+function msgSheet(r){
+  let names=S().names;
+  const draw=()=>{
+    openSheet('<h2>Повідомлення для взводу</h2><label style="color:var(--tx);font-size:14px"><input type="checkbox" id="mNames"'+(names?" checked":"")+'>Вказувати прізвища в підгрупах'+hint("mNames")+'</label><pre class="msg" id="mTxt">'+esc(planText(r,names))+'</pre><div class="btns"><button id="mShare">Надіслати</button><button class="sec" id="mCopy">Скопіювати</button><button class="ghost" id="mClose">Закрити</button></div><p class="mut small">Повідомлення надсилаєте ви самі; додаток нічого нікуди не передає.</p>');
+    $("mNames").onchange=e=>{names=e.target.checked;S().names=names;save();draw()};
+    $("mShare").onclick=()=>share(planText(r,names),"Заняття "+dLabel(r.date));
+    $("mCopy").onclick=()=>copy(planText(r,names));
+    $("mClose").onclick=closeSheet;
+  };draw();
+}
+function addLesson(r){
+  const pids=[...new Set(r.known.concat(r.unknown.map(u=>u.p)).map(p=>p.pid))];
+  const ids=r.known.map(p=>p.id).concat(r.unknown.map(u=>u.p.id));
+  const L={id:uid(),date:r.date,pids,ids,dur:r.dur,mode:r.mode,start:r.best?r.best.m:null,K:r.best?r.best.K:null,
+    groups:r.groups.map(g=>({m:g.m,ids:g.ids})),gCov:r.gCov,src:r.src,status:"plan",present:{},topic:"",created:Date.now()};
+  DB.lessons.push(L);save();toast("Заняття записано в журнал");
+}
+
+/* ================= вкладка «Зараз» ================= */
+function renderNowForm(){
+  $("nowBanners").innerHTML=banners();
+  const sel=$("nowPlatoon"), v=sel.value;
+  sel.innerHTML=DB.platoons.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("");
+  if(v&&platoon(v)) sel.value=v;
+  if(!DB.platoons.length) $("nowOut").innerHTML='<div class="card mut">Немає взводів.</div>';
+}
+$("nowGo").onclick=async()=>{ $("nowOut").innerHTML='<div class="card mut">Оновлюю дані…</div>'; await refreshData(true); renderNowForm(); renderNow() };
+function nextSwitch(av,slot){const v=av.on[slot]>=.999;for(let t=slot+1;t<48;t++) if((av.on[t]>=.999)!==v) return t*30; return null}
+function renderNow(){
+  const pid=$("nowPlatoon").value; const people=studentsOf(pid); const today=kyiv().date, now=kyiv().min, slot=Math.min(47,Math.floor(now/30));
+  if(!people.length){$("nowOut").innerHTML='<div class="card mut">У взводі немає здобувачів.</div>';return}
+  let on=0,sum=0,rows="";
+  const s=S();
+  people.forEach(p=>{
+    const av=availability(p,today); let cls="unk",txt="",e=0;
+    if(av.err) txt=av.err;
+    else{
+      e=av.e[slot]; sum+=e; if(e>=s.cover) on++;
+      const ns=nextSwitch(av,slot);
+      if(av.on[slot]>=1){cls="on";txt="світло є"+(ns!=null?" до "+hm(ns):" до кінця доби")}
+      else if(e>0){cls="auto";txt="світла немає"+(ns!=null?" до "+hm(ns):"")+", але може навчатися"}
+      else{cls="off";txt="світла немає"+(ns!=null?", з'явиться о "+hm(ns):"")}
+      if(av.notes.length) txt+=". "+av.notes.join("; ");
+    }
+    const sw=settlementWarn(p);
+    rows+='<li><span class="dot '+cls+'"></span><div class="grow"><div class="nm">'+esc(p.name)+'</div><div class="mut small">'+esc(p.code||"?")+" · "+esc(txt)+(sw?' <span class="chip w">аварія в населеному пункті</span>':"")+'</div></div><b class="small">'+(av.err?"":fx(e,1))+'</b></li>';
+  });
+  const N=people.length;
+  // найближче вікно від поточної хвилини
+  const r=planDay(people,today,S().dur);
+  let h='<div class="card"><h2>Зараз, '+hm(now)+'</h2><div class="kpi"><div><b>'+on+' з '+N+'</b><span>можуть бути онлайн</span></div><div><b>'+fx(sum/N)+'</b><span>K(t) на цю хвилину</span></div>';
+  if(r.best) h+='<div><b>'+hm(r.best.m)+'</b><span>найкращий початок сьогодні, K<sub>w</sub> = '+fx(r.best.K)+'</span></div>';
+  h+='</div>';
+  if(!outFresh()) h+='<p class="banner" style="margin-top:10px">Оперативні дані про аварії недоступні або застарілі: стан показано за графіком.</p>';
+  h+='<ul class="list" style="margin-top:10px">'+rows+'</ul><p class="mut small">Дані обленерго оновлено '+(OUT?hm(kyiv(OUT.updated).min):"н/д")+'. Аварії враховуються лише для здобувачів, у яких збережено адресу.</p></div>';
+  $("nowOut").innerHTML=h;
+}
+
+/* ================= вкладка «Взводи» ================= */
+let curPl=null;
+const SURVEY="Для планування дистанційних занять в умовах відключень прошу надіслати мені особисто (дані зберігаються лише на моєму пристрої і нікуди не передаються):\n\n1. ПІБ і посилання на свою адресу зі «Світло є?». Відкрийте https://svitloe.net, знайдіть свій будинок (пошуком або дотиком на карті), у картці будинку натисніть «Поділитися» і надішліть мені посилання.\n2. Чи можете ви навчатися онлайн, коли вдома немає світла: так чи ні. «Так» означає, що є чим живити ноутбук чи смартфон кілька годин і є інтернет, який не зникає разом зі світлом (мобільний, оптика з резервом, Starlink).\n\nПриклад відповіді: Іваненко І. І. https://svitloe.net/#a=... так";
+function renderPeople(){
+  $("survey").textContent=SURVEY;
+  $("plList").innerHTML=DB.platoons.length?DB.platoons.map(p=>{
+    const st=studentsOf(p.id), noq=st.filter(s=>!s.code).length, au=st.filter(s=>s.auto).length, nol=st.filter(s=>!s.link).length;
+    return '<li data-p="'+p.id+'" style="cursor:pointer"><div class="grow"><div class="nm">'+esc(p.name)+'</div><div class="mut small">'+st.length+' здобувачів · можуть без світла '+au+(nol?' · без посилання '+nol:"")+(noq?' · <span style="color:var(--off)">без підчерги '+noq+'</span>':"")+'</div></div><span class="mut">›</span></li>'}).join(""):'<li class="mut">Ще немає взводів.</li>';
+  $("plList").querySelectorAll("li[data-p]").forEach(li=>li.onclick=()=>{curPl=li.dataset.p;renderPlDetail()});
+  if(curPl&&platoon(curPl)) renderPlDetail(); else $("plDetail").innerHTML="";
+}
+$("survey").textContent=SURVEY;
+$("surveyCopy").onclick=()=>copy(SURVEY);
+$("plAdd").onclick=()=>{
+  openSheet('<h2>Новий взвод</h2><label>Назва'+hint("plName")+'</label><input id="plName" placeholder="Наприклад, 2 навчальний взвод"><div class="btns"><button id="plOk">Додати</button><button class="ghost" id="plNo">Скасувати</button></div>');
+  $("plName").focus();
+  $("plOk").onclick=()=>{const n=$("plName").value.trim();if(!n)return;const p={id:uid(),name:n};DB.platoons.push(p);curPl=p.id;save();closeSheet();renderPeople()};
+  $("plNo").onclick=closeSheet;
+};
+$("plDemo").onclick=()=>{
+  const dist={"1.1":2,"1.2":2,"2.1":3,"2.2":2,"3.1":2,"3.2":3,"4.1":2,"4.2":1,"5.1":2,"5.2":2,"6.1":2,"6.2":1};
+  const p={id:uid(),name:"Демо-взвод (умовна група зі статті)"};DB.platoons.push(p);
+  let i=1;Object.keys(dist).forEach(q=>{for(let k=0;k<dist[q];k++){DB.students.push({id:uid(),pid:p.id,name:"Здобувач "+String(i).padStart(2,"0"),code:q,auto:false,addr:null,link:"",note:""});i++}});
+  curPl=p.id;save();renderPeople();toast("Додано 24 умовних здобувачі, які не можуть навчатися без світла");
+};
+function renderPlDetail(){
+  const p=platoon(curPl); if(!p){$("plDetail").innerHTML="";return}
+  const st=studentsOf(p.id);
+  let h='<div class="card"><h2>'+esc(p.name)+'</h2><ul class="list">';
+  h+=st.length?st.map(s=>'<li data-s="'+s.id+'" style="cursor:pointer"><div class="grow"><div class="nm">'+esc(s.name)+'</div><div>'+(s.code?'<span class="chip">'+esc(s.code==="0"?"без графіка":s.code)+'</span>':'<span class="chip b">підчерга?</span>')+(s.auto?'<span class="chip">може без світла</span>':"")+(s.addr?'<span class="chip">адреса</span>':'<span class="chip w">без посилання</span>')+'</div></div><span class="mut">›</span></li>').join(""):'<li class="mut">Немає здобувачів.</li>';
+  h+='</ul><div class="btns"><button id="stAdd">Додати за посиланням</button><button class="sec" id="stImp">Вставити список</button></div><div class="btns"><button class="ghost" id="plRen">Перейменувати</button><button class="ghost" id="plDel" style="color:var(--off)">Видалити взвод</button></div></div>';
+  $("plDetail").innerHTML=h;
+  $("plDetail").querySelectorAll("li[data-s]").forEach(li=>li.onclick=()=>editStudent(li.dataset.s));
+  $("stAdd").onclick=()=>editStudent(null);
+  $("stImp").onclick=importSheet;
+  $("plRen").onclick=()=>{const n=prompt("Нова назва взводу",p.name);if(n&&n.trim()){p.name=n.trim();save();renderPeople()}};
+  $("plDel").onclick=()=>{if(confirm("Видалити взвод «"+p.name+"» і всіх його здобувачів?")){DB.students=DB.students.filter(s=>s.pid!==p.id);DB.platoons=DB.platoons.filter(x=>x.id!==p.id);curPl=null;save();renderPeople()}};
+  setTimeout(()=>$("plDetail").scrollIntoView({behavior:"smooth",block:"start"}),50);
+}
+function qOpts(v){return '<option value="">невідомо</option>'+QUEUES.map(q=>'<option'+(q===v?" selected":"")+'>'+q+'</option>').join("")+'<option value="0"'+(v==="0"?" selected":"")+'>0 (не вимикається за графіком)</option>'}
+const addrText=a=>a.sp+", "+a.st+(a.h?", "+a.h:"");
+function editStudent(id){
+  const s=id?DB.students.find(x=>x.id===id):{id:uid(),pid:curPl,name:"",code:"",auto:false,addr:null,link:"",note:""};
+  let addr=s.addr, lastLink=s.link||"", busy=null;
+  openSheet('<h2>'+(id?"Здобувач":"Новий здобувач")+'</h2>'+
+    '<label>ПІБ або позивний'+hint("sName")+'</label><input id="sName" value="'+esc(s.name)+'">'+
+    '<label>Посилання з «Світло є?»'+hint("sLink")+'</label><input id="sLink" value="'+esc(s.link||"")+'" placeholder="https://svitloe.net/#a=…" inputmode="url" autocomplete="off">'+
+    '<p class="mut small" id="sAddr">'+(addr?esc(addrText(addr)):"Вставте посилання, яке надіслав здобувач: адресу і підчергу буде визначено автоматично.")+'</p>'+
+    '<label>Підчерга'+hint("sCode")+'</label><select id="sCode">'+qOpts(s.code)+'</select>'+
+    '<label style="color:var(--tx);font-size:15px;display:flex;align-items:center;margin-top:14px"><input type="checkbox" id="sAuto"'+(s.auto?" checked":"")+'>Може навчатися без світла'+hint("sAuto")+'</label>'+
+    '<label>Примітка'+hint("sNote")+'</label><input id="sNote" value="'+esc(s.note||"")+'">'+
+    '<div class="btns"><button id="sOk">Зберегти</button><button class="ghost" id="sNo">Скасувати</button>'+(id?'<button class="ghost" id="sDel" style="color:var(--off)">Видалити</button>':"")+'</div>');
+  const resolve=()=>busy||(busy=(async()=>{
+    const v=$("sLink").value.trim();
+    if(v===lastLink&&(addr||!v)) return;
+    lastLink=v;
+    if(!v){addr=null;$("sAddr").textContent="Без посилання: підчергу вкажіть вручну, аварії на адресі не враховуватимуться.";return}
+    $("sAddr").textContent="Визначаю адресу і підчергу…";
+    try{
+      const r=await resolveLink(v); addr=r.addr;
+      $("sAddr").textContent=addrText(r.addr)+(r.code?": підчерга "+r.code+(r.all&&r.all.length>1?" (за адресою кілька: "+r.all.join(", ")+")":""):": підчергу в базі не знайдено, вкажіть вручну");
+      if(r.code) $("sCode").value=r.code;
+    }catch(e){$("sAddr").textContent=e.message; try{addr=parseLink(v)}catch(_){addr=null}}
+  })().finally(()=>{busy=null}));
+  $("sLink").onchange=resolve; $("sLink").onpaste=()=>setTimeout(resolve,60);
+  $("sNo").onclick=closeSheet;
+  if(id) $("sDel").onclick=()=>{if(confirm("Видалити "+s.name+"?")){DB.students=DB.students.filter(x=>x.id!==id);save();closeSheet();renderPeople()}};
+  $("sOk").onclick=async()=>{
+    await resolve();
+    const n=$("sName").value.trim(); if(!n){toast("Вкажіть ПІБ");return}
+    const link=$("sLink").value.trim();
+    Object.assign(s,{name:n,code:$("sCode").value,auto:$("sAuto").checked,note:$("sNote").value.trim(),link,addr:link?addr:null});
+    if(!id) DB.students.push(s); save(); closeSheet(); renderPeople();
+  };
+}
+// посилання «Поділитися» зі «Світло є?»: #a=РЕМ|населений пункт|вулиця|будинок@lat,lon
+function parseLink(link){
+  const i=String(link).indexOf("#a="); if(i<0) throw new Error("Це не посилання на адресу з «Світло є?»");
+  let h=String(link).slice(i+3); try{h=decodeURIComponent(h)}catch(e){}
+  const p=h.split("@")[0].split("|"); if(p.length<3) throw new Error("Посилання неповне");
+  return {rem:p[0],sp:p[1],st:p[2],h:p[3]||""};
+}
+let REMIX=null;const REMC={};
+async function getData(path){
+  try{return await getJSON(S().data+path)}catch(e){return await getJSON((/^https?:$/.test(location.protocol)?"data/":"https://svitloe.net/data/")+path)}
+}
+async function resolveLink(link){
+  const a=parseLink(link);
+  if(!REMIX) REMIX=await getData("index.json").catch(()=>{throw new Error("Немає зв'язку з базою адрес. Адресу збережено, підчергу вкажіть вручну.")});
+  const ix=REMIX[a.rem]; if(!ix) return {addr:a,code:""};
+  const d=REMC[a.rem]||(REMC[a.rem]=await getData(ix.file));
+  const g=((d[a.sp]||{})[a.st])||{}; let codes=[];
+  Object.keys(g).forEach(c=>{if(!a.h||String(g[c]).split(",").map(hk).indexOf(hk(a.h))>=0)codes.push(c)});
+  const plain=codes.filter(c=>!/ю$/.test(c)); codes=(plain.length?plain:codes).map(c=>c.replace(/ю$/,"")).sort();
+  return {addr:a,code:codes[0]||"",all:codes};
+}
+function importSheet(){
+  openSheet('<h2>Вставити список</h2><p class="mut small">Скопіюйте сюди відповіді здобувачів: кожен з нового рядка, ПІБ і посилання з «Світло є?». Якщо здобувач може навчатися без світла, наприкінці рядка має бути «так».<br>Приклад: <code>Іваненко І. І. https://svitloe.net/#a=… так</code></p><label>Список'+hint("imp")+'</label><textarea id="impTxt" rows="8"></textarea><div class="btns"><button id="impOk">Додати</button><button class="ghost" id="impNo">Скасувати</button></div><p class="mut small" id="impRes"></p>');
+  $("impNo").onclick=closeSheet;
+  $("impOk").onclick=async()=>{
+    $("impOk").disabled=true; $("impRes").textContent="Визначаю адреси і підчерги…";
+    const lines=$("impTxt").value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean); let n=0; const bad=[];
+    for(const l of lines){
+      const m=l.match(/https?:\/\/\S*#a=\S+/), link=m?m[0]:"";
+      let rest=(link?l.replace(link," "):l).split(/\t|;/).map(x=>x.trim()).filter(Boolean).join(" ").replace(/\s+/g," ").trim();
+      let auto=false, code="";
+      rest=rest.replace(/(^|[\s,])(так|ні|yes|no|\+|-|є|немає)[.!]?$/i,(x,a,w)=>{auto=/^(так|yes|\+|є)$/i.test(w);return ""}).trim();
+      rest=rest.replace(/(^|\s)([1-6][.,][12]|0)$/,(x,a,c)=>{code=c.replace(",",".");return ""}).trim();
+      rest=rest.replace(/[\s,;:–-]+$/,"").trim();
+      if(!rest||/^піб\b/i.test(rest)) continue;
+      const st={id:uid(),pid:curPl,name:rest,code,auto,addr:null,link,note:""};
+      if(link){try{const r=await resolveLink(link);st.addr=r.addr;if(!st.code)st.code=r.code}catch(e){try{st.addr=parseLink(link)}catch(_){}}}
+      if(!st.code) bad.push(rest);
+      DB.students.push(st); n++;
+    }
+    save(); closeSheet(); renderPeople(); toast("Додано "+n+(bad.length?". Без підчерги: "+bad.length+", допишіть вручну":""));
+  };
+}
+
+/* ================= вкладка «Журнал» ================= */
+function lessonN(L){return (L.ids||[]).length}
+function lessonA(L){const n=lessonN(L);return n?Object.keys(L.present||{}).filter(k=>L.present[k]&&L.ids.includes(k)).length/n:null}
+function renderLog(){
+  const s=S(); const L=DB.lessons.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.start||0)-(a.start||0));
+  const syncL=DB.lessons.filter(x=>["sync","mixed","groups"].includes(x.mode)&&x.status!=="plan");
+  const done=syncL.filter(x=>x.status==="done");
+  const Rn=done.filter(x=>lessonA(x)>=s.Km).length;
+  const R=syncL.length?Rn/syncL.length:null;
+  const As=done.map(lessonA).filter(v=>v!=null), A=As.length?As.reduce((a,b)=>a+b,0)/As.length:null;
+  const ds=done.filter(x=>x.K!=null&&x.mode!=="groups").map(x=>Math.abs(x.K-lessonA(x))), D=ds.length?ds.reduce((a,b)=>a+b,0)/ds.length:null;
+  const P=syncL.length?syncL.filter(x=>x.status==="moved").length/syncL.length:null;
+  $("kpi").innerHTML='<div class="kpi"><div><b>'+fx(R)+'</b><span>R, реалізація ('+Rn+'/'+syncL.length+')</span></div><div><b>'+fx(A)+'</b><span>A, частка участі</span></div><div><b>'+fx(D)+'</b><span>δ, похибка прогнозу</span></div><div><b>'+fx(P)+'</b><span>P, перенесені</span></div></div>';
+  const ST={plan:"заплановано",done:"проведено",moved:"перенесено",cancel:"скасовано"};
+  $("logList").innerHTML=L.length?L.map(x=>{
+    const a=lessonA(x); const pl=(x.pids||[]).map(id=>(platoon(id)||{}).name||"?").join(", ");
+    return '<li data-l="'+x.id+'" style="cursor:pointer"><div class="grow"><div class="nm">'+dLabel(x.date)+(x.start!=null?", "+hm(x.start):"")+" · "+esc(MODE[x.mode]||x.mode)+'</div><div class="mut small">'+esc(pl)+(x.topic?" · "+esc(x.topic):"")+'</div><div><span class="chip'+(x.status==="plan"?" w":x.status==="done"?"":" b")+'">'+ST[x.status]+'</span><span class="chip">прогноз '+fx(x.mode==="groups"?x.gCov:x.K)+'</span>'+(x.status==="done"&&a!=null?'<span class="chip">факт '+fx(a)+'</span>':"")+'</div></div><span class="mut">›</span></li>'}).join(""):'<li class="mut">Записів немає. Після розрахунку натисніть «Записати в журнал».</li>';
+  $("logList").querySelectorAll("li[data-l]").forEach(li=>li.onclick=()=>editLesson(li.dataset.l));
+}
+function editLesson(id){
+  const L=DB.lessons.find(x=>x.id===id); if(!L) return;
+  const people=L.ids.map(i=>DB.students.find(s=>s.id===i)).filter(Boolean);
+  const grpOf=sid=>{const i=(L.groups||[]).findIndex(g=>g.ids.includes(sid));return i>=0&&L.mode==="groups"?" (підгрупа "+(i+1)+", "+hm(L.groups[i].m)+")":""};
+  openSheet('<h2>'+dLabel(L.date)+(L.start!=null?", "+hm(L.start):"")+'</h2><p class="mut">'+esc(MODE[L.mode])+' · прогноз '+fx(L.mode==="groups"?L.gCov:L.K)+'</p>'+
+    '<label>Тема'+hint("lTopic")+'</label><input id="lTopic" value="'+esc(L.topic||"")+'">'+
+    '<label>Стан'+hint("lSt")+'</label><select id="lSt"><option value="plan">заплановано</option><option value="done">проведено</option><option value="moved">перенесено</option><option value="cancel">скасовано</option></select>'+
+    '<h3>Фактична участь'+hint("lAtt")+'</h3><ul class="list att">'+people.map(p=>'<li><label><input type="checkbox" data-s="'+p.id+'"'+(L.present[p.id]?" checked":"")+'>'+esc(p.name)+'<span class="mut small">&nbsp;'+esc(grpOf(p.id))+'</span></label></li>').join("")+'</ul>'+
+    '<div class="btns"><button id="lOk">Зберегти</button><button class="sec" id="lAll">Усі присутні</button><button class="ghost" id="lDel" style="color:var(--off)">Видалити</button></div>');
+  $("lSt").value=L.status;
+  $("lAll").onclick=()=>document.querySelectorAll("#sheetBox input[data-s]").forEach(i=>i.checked=true);
+  $("lDel").onclick=()=>{if(confirm("Видалити запис?")){DB.lessons=DB.lessons.filter(x=>x.id!==id);save();closeSheet();renderLog()}};
+  $("lOk").onclick=()=>{L.topic=$("lTopic").value.trim();L.status=$("lSt").value;L.present={};document.querySelectorAll("#sheetBox input[data-s]").forEach(i=>{if(i.checked)L.present[i.dataset.s]=true});if(L.status==="plan"&&Object.keys(L.present).length)L.status="done";save();closeSheet();renderLog()};
+}
+$("logCsv").onclick=()=>{
+  const rows=[["Дата","Початок","Тривалість, хв","Взводи","Формат","Тема","Стан","Прогноз K","Чисельність","Присутні","Частка участі"]];
+  DB.lessons.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(L=>{const a=lessonA(L);rows.push([L.date,L.start!=null?hm(L.start):"",L.dur,(L.pids||[]).map(id=>(platoon(id)||{}).name||"").join(", "),MODE[L.mode]||L.mode,L.topic||"",L.status,fx(L.mode==="groups"?L.gCov:L.K),lessonN(L),Object.keys(L.present||{}).length,a==null?"":fx(a)])});
+  const csv="﻿"+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(";")).join("\r\n");
+  download(new Blob([csv],{type:"text/csv"}),"zhurnal-zaniat-"+kyiv().date+".csv");
+};
+function download(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+
+/* ================= вкладка «Налаштування» ================= */
+function field(path,label,type,extra){
+  const v=path.split(".").reduce((o,k)=>o[k],S());
+  if(type==="check") return '<label style="color:var(--tx);font-size:15px;display:flex;align-items:center;margin-top:12px"><input type="checkbox" data-k="'+path+'"'+(v?" checked":"")+'>'+label+hint(path)+'</label>';
+  if(type==="select") return '<label>'+label+hint(path)+'</label><select data-k="'+path+'">'+extra+'</select>';
+  return '<label>'+label+hint(path)+'</label><input data-k="'+path+'" type="'+type+'" value="'+esc(v)+'" '+(extra||"")+'>';
+}
+function renderSettings(){
+  $("setMethod").innerHTML='<div class="grid2">'+field("Ks","K<sub>с</sub>, поріг синхронного заняття","number",'step="0.05" min="0" max="1"')+field("Km","K<sub>м</sub>, мінімальний поріг","number",'step="0.05" min="0" max="1"')+'</div>'+
+    '<div class="grid2">'+field("cover","Поріг для прогнозних днів","number",'step="0.05" min="0.05" max="1"')+field("maxGroups","Найбільше підгруп","number",'min="1" max="6"')+'</div>'+
+    '<div class="grid2">'+field("from","Початок не раніше","time")+field("to","Завершення не пізніше","time")+'</div>'+
+    '<div class="grid2">'+field("step","Крок варіантів, хв","number",'min="5" max="120" step="5"')+field("fcDays","Днів для прогнозу","number",'min="3" max="60"')+'</div>'+
+    field("starts","Або фіксований час початку пар","text",'placeholder="наприклад 08:30, 10:10, 11:50"')+
+    field("useLive","Враховувати фактичний стан підчерг сьогодні","check")+field("useAcc","Враховувати аварії на адресах здобувачів","check");
+  $("setTeacher").innerHTML=field("teacher.code","Ваша підчерга","select",qOpts(S().teacher.code).replace('>невідомо<','>не враховувати<'))+field("teacher.auto","Можу проводити заняття без світла","check");
+  $("setData").innerHTML=field("live","Оперативні дані (графік, аварії)","url")+field("data","База адрес","url")+'<p class="mut small">Архів графіків у пам\'яті: '+Object.keys(PUB.archive).length+' діб ('+(Object.keys(PUB.archive).sort()[0]?dLabel(Object.keys(PUB.archive).sort()[0]):"порожньо")+'…). Він накопичується з кожним оновленням і потрібен для прогнозу на дні без графіка.</p>';
+  document.querySelectorAll("#t-set [data-k]").forEach(el=>el.onchange=()=>{
+    const ks=el.dataset.k.split("."), last=ks.pop(), o=ks.reduce((a,k)=>a[k],S());
+    let v=el.type==="checkbox"?el.checked:el.type==="number"?parseFloat(el.value):el.value;
+    if(el.type==="number"&&isNaN(v)) return;
+    if(["Ks","Km","cover"].includes(last)) v=Math.min(1,Math.max(0,v));
+    o[last]=v; save(); toast("Збережено");
+  });
+  $("secState").innerHTML=!CRYPTO_OK?'<p class="banner">У цьому режимі браузер не підтримує шифрування. Відкрийте файл безпосередньо в Chrome або розмістіть його на сайті з HTTPS.</p>':KEY?'<p><span class="chip">шифрування увімкнено</span> AES-256-GCM, ключ з пароля (PBKDF2, 250 000 ітерацій). Без пароля дані прочитати неможливо.</p>':'<p><span class="chip w">без пароля</span> Рекомендуємо встановити пароль: тоді дані на пристрої зберігаються в зашифрованому вигляді.</p>';
+  $("secPw").textContent=KEY?"Змінити або зняти пароль":"Встановити пароль"; $("secPw").disabled=!CRYPTO_OK; $("secLock").style.display=KEY?"":"none";
+}
+$("secPw").onclick=()=>{
+  openSheet('<h2>'+(KEY?"Змінити пароль":"Встановити пароль")+'</h2><p class="mut small">Забутий пароль відновити неможливо. Зробіть резервну копію у файл.</p><label>Новий пароль (порожньо: зняти захист)'+hint("pw1")+'</label><input id="pw1" type="password" autocomplete="new-password"><label>Ще раз'+hint("pw2")+'</label><input id="pw2" type="password" autocomplete="new-password"><div class="btns"><button id="pwOk">Застосувати</button><button class="ghost" id="pwNo">Скасувати</button></div>');
+  $("pwNo").onclick=closeSheet;
+  $("pwOk").onclick=async()=>{
+    const a=$("pw1").value,b=$("pw2").value; if(a!==b){toast("Паролі не збігаються");return}
+    if(!a){if(!KEY){closeSheet();return} if(!confirm("Зняти шифрування? Дані зберігатимуться відкрито."))return; KEY=null;SALT=null}
+    else{if(a.length<6){toast("Щонайменше 6 символів");return}SALT=crypto.getRandomValues(new Uint8Array(16));KEY=await deriveKey(a,SALT)}
+    await saveNow(); closeSheet(); renderSettings(); toast(KEY?"Дані зашифровано":"Шифрування знято");
+  };
+};
+$("secLock").onclick=()=>{location.reload()};
+$("bkExport").onclick=async()=>{
+  const box=KEY?await sealObj(DB):{enc:0,data:DB};
+  box.app="svitloe-planuvannia";box.saved=new Date().toISOString();
+  download(new Blob([JSON.stringify(box)],{type:"application/json"}),"svitloe-planuvannia-"+kyiv().date+".json");
+  if(!KEY) toast("Копія не зашифрована: зберігайте її в безпечному місці");
+};
+$("bkImport").onclick=()=>$("bkFile").click();
+$("bkFile").onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  try{
+    const box=JSON.parse(await f.text()); let d;
+    if(box.enc){const pw=prompt("Пароль резервної копії");if(pw==null)return;const salt=ub64(box.salt);const k=await deriveKey(pw,salt);d=await openObj(box,k);if(!KEY){KEY=k;SALT=salt}}
+    else d=box.data;
+    if(!d||!d.students) throw new Error("файл не схожий на резервну копію");
+    if(!confirm("Замінити поточні дані вмістом копії ("+d.students.length+" здобувачів, "+(d.lessons||[]).length+" занять)?")) return;
+    DB=fixDB(d); await saveNow(); toast("Відновлено"); showTab(curTab);
+  }catch(err){toast("Не вдалося відновити: "+(err.name==="OperationError"?"невірний пароль":err.message))}
+};
+$("wipe").onclick=()=>{if(confirm("Видалити всіх здобувачів, взводи, журнал і налаштування з цього пристрою?")&&confirm("Точно? Дію не можна скасувати.")){localStorage.removeItem(LS_DB);localStorage.removeItem(LS_PUB);location.reload()}};
+
+/* ================= запуск ================= */
+async function unlock(pw){
+  const box=JSON.parse(localStorage.getItem(LS_DB));
+  const salt=ub64(box.salt), k=await deriveKey(pw,salt);
+  DB=fixDB(await openObj(box,k)); KEY=k; SALT=salt;
+}
+$("lockGo").onclick=async()=>{
+  $("lockErr").textContent="Перевіряю…";
+  try{await unlock($("lockPw").value);$("lock").classList.remove("open");$("lockPw").value="";start()}
+  catch(e){$("lockErr").textContent="Невірний пароль"}
+};
+$("lockPw").onkeydown=e=>{if(e.key==="Enter")$("lockGo").click()};
+function start(){
+  showTab("plan");
+  if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+  // офлайн-кеш спільний з картою (sw.js): сторінка відкривається й без зв'язку після першого входу
+  if("serviceWorker" in navigator&&location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
+  refreshData(true).then(()=>{if(curTab==="plan")renderPlanForm()});
+  setInterval(()=>{if(document.visibilityState==="visible")refreshData(true)},15*60e3);
+}
+addEventListener("online",updHdr);addEventListener("offline",updHdr);
+(function init(){
+  loadPub(); updHdr();
+  let box=null; try{box=JSON.parse(localStorage.getItem(LS_DB)||"null")}catch(e){}
+  if(box&&box.enc){ if(!CRYPTO_OK){document.body.innerHTML='<p style="padding:20px">Дані зашифровано, але цей браузер не підтримує розшифрування в такому режимі.</p>';return} $("lock").classList.add("open"); setTimeout(()=>$("lockPw").focus(),100); return }
+  DB=fixDB(box&&box.data?box.data:newDB()); start();
+})();
+</script>
+</body>
+</html>
