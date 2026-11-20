@@ -286,8 +286,10 @@ document.addEventListener("click",e=>{
     pop.style.top=top+"px"; pop.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2))+"px";
     return;
   }
-  if(!e.target.closest||!e.target.closest("#pop")) pop.classList.remove("on");
 },true);
+// закривається від дотику будь-де, зокрема по самому поясненню (pointerdown спрацьовує й на iPhone, де click по звичайному тексту не доходить до document)
+document.addEventListener("pointerdown",e=>{if(!(e.target.closest&&e.target.closest(".hint"))) $("pop").classList.remove("on")},true);
+addEventListener("keydown",e=>{if(e.key==="Escape") $("pop").classList.remove("on")});
 addEventListener("scroll",()=>{const p=$("pop");if(Date.now()-(+p.dataset.t||0)>500)p.classList.remove("on")},true);
 
 /* ================= сховище (локальне, за бажання зашифроване) ================= */
